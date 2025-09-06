@@ -19,7 +19,7 @@ impl Plugin for PlatformPlugin {
 
 // ---
 
-pub const PLATFORM_DIM: Vec3 = Vec3::new(10., 0.1, 10.);
+pub const PLATFORM_DIM: Vec3 = Vec3::new(5., 0.1, 10.);
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
 pub struct PlatformMaterial {
@@ -107,7 +107,7 @@ fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<PlatformMaterial>>,
-    mut materials_s: ResMut<Assets<StandardMaterial>>,
+    // mut materials_s: ResMut<Assets<StandardMaterial>>,
 ) {
     let mesh = meshes.add(Cuboid::from_size(PLATFORM_DIM));
     let color = materials.add(PlatformMaterial {color: Color::srgba (0.4, 0., 1., 0.1).into() }); 
@@ -116,12 +116,12 @@ fn startup(
     
     let rotations = vec![
         PDir::Forward,
-        // PDir::Right,
-        // PDir::Down,
-        // PDir::Up,
-        // PDir::Right,
-        // PDir::Down,
-        // PDir::Up,
+        PDir::Right,
+        PDir::Down,
+        PDir::Up,
+        PDir::Right,
+        PDir::Down,
+        PDir::Up,
         // PDir::Left,
         // PDir::Up,
         // PDir::Down,
@@ -147,36 +147,6 @@ fn startup(
         // PDir::Forward,
     ];
 
-    
-    // let mut pos = Vec3::ZERO;
-    // let step = Vec3::Z * PLATFORM_DIM.z;
-    // let mut total_rotation = Quat::IDENTITY;
-    // let mut trans = Transform::IDENTITY;
-
-    // for (idx, rs) in  rotations.iter().enumerate() {
-    //     let r = PDir::get_rotation(rs);
-    //     total_rotation = total_rotation.mul_quat(r).normalize();
-    //     if idx > 0 {
-    //         let to = r.mul_vec3(*trans.forward()).normalize().reject_from(*trans.up()).normalize();
-    //         let connect_point = trans.translation + to * PLATFORM_DIM.z * 0.5;
-    //         pos = connect_point + total_rotation.mul_vec3(-step * 0.5);
-    //         // println!("{pos}");
-        
-    //     }
-
-    //     trans = Transform::from_translation(pos).with_rotation(total_rotation);
-    //     cmd.spawn((
-    //         trans,
-    //         Mesh3d(mesh.clone()),
-    //         MeshMaterial3d(color.clone()),
-    //         Collider::cuboid(PLATFORM_DIM.x, PLATFORM_DIM.y, PLATFORM_DIM.z),
-    //         RigidBody::Static,
-    //         Platform
-    //     ));
-        
-    // }
-
-    
     let mut pos = Vec3::ZERO;
     let mut trans = Transform::IDENTITY;
 
@@ -187,8 +157,9 @@ fn startup(
                 PDir::Left | PDir::LeftDown | PDir::LeftUp => trans.left(),
                 _ => trans.forward()
             };
-            
-            let connect_point = trans.translation + dir * PLATFORM_DIM.z * 0.5;    
+            let step = if dir == trans.forward() { PLATFORM_DIM.z} else {PLATFORM_DIM.x};
+
+            let connect_point = trans.translation + dir * step * 0.5;    
             trans.rotate_local(PDir::get_rotation(rs));
             pos = connect_point + trans.rotation.mul_vec3(-Vec3::Z * PLATFORM_DIM.z * 0.51);
         }
@@ -236,8 +207,9 @@ fn build_single(
     }) else {
         return;
     };
+    let step = if [pt.forward(), pt.back()].contains(&face_to)  { PLATFORM_DIM.z} else {PLATFORM_DIM.x};
 
-    let connect_point = pt.translation + *face_to * PLATFORM_DIM.z * 0.5;
+    let connect_point = pt.translation + *face_to * step * 0.5;
     let add = Quat::from_rotation_arc(*pt.forward(), *face_to).normalize();
 
     let rotation = pt.rotation * add *  match act {
