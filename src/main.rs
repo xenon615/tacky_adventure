@@ -37,7 +37,7 @@ fn main() {
         // PhysicsDebugPlugin::default(),
         camera::CameraPlugin,
         env::EnvPlugin,
-        // eyes::EyesPlugin,
+        eyes::EyesPlugin,
         player::PlayerPlugin,
         platform::PlatformPlugin,
         lift::LiftPlugin,

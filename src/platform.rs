@@ -11,8 +11,7 @@ impl Plugin for PlatformPlugin {
         app
         .add_plugins(MaterialPlugin::<PlatformMaterial>::default())
         .add_systems(Startup, startup)
-        .add_systems(Update, keypress)
-        .add_systems(Update, gismos)
+        // .add_systems(Update, gismos)
         .add_observer(build_single)
         ;
     }
@@ -78,6 +77,7 @@ enum PDir {
     Forward,
     Back,
     BackUp,
+    BackDown,
     LeftDown,
     LeftUp,
     RightDown,
@@ -93,6 +93,7 @@ impl PDir {
             Self::Forward => Quat::IDENTITY,
             Self::Back =>  Quat::from_rotation_y(180.0_f32.to_radians()),
             Self::BackUp =>  Quat::from_rotation_y(180.0_f32.to_radians()) * Quat::from_rotation_x(30.0_f32.to_radians()),
+            Self::BackDown =>  Quat::from_rotation_y(180.0_f32.to_radians()) * Quat::from_rotation_x(-30.0_f32.to_radians()),
             Self::LeftDown => Quat::from_rotation_y(90.0_f32.to_radians()) * Quat::from_rotation_x(-30.0_f32.to_radians()),
             Self::LeftUp => Quat::from_rotation_y(90.0_f32.to_radians()) * Quat::from_rotation_x(30.0_f32.to_radians()),
             Self::RightDown => Quat::from_rotation_y(-90.0_f32.to_radians()) * Quat::from_rotation_x(-30.0_f32.to_radians()),
@@ -205,11 +206,11 @@ fn startup(
         
     }
 
-    cmd.spawn((
-        Mesh3d(meshes.add(Cuboid::from_length(1.))),
-        MeshMaterial3d(materials_s.add(Color::WHITE)),
-        MarkerCommect
-    ));
+    // cmd.spawn((
+    //     Mesh3d(meshes.add(Cuboid::from_length(1.))),
+    //     MeshMaterial3d(materials_s.add(Color::WHITE)),
+    //     MarkerCommect
+    // ));
 
 }
 
@@ -223,118 +224,31 @@ fn build_single(
     tr: Trigger<Build>,
     mut cmd: Commands,
     pt_q: Query<&Transform, Without<MarkerCommect>>,
-    m_q: Single<&mut Transform,  With<MarkerCommect>>
+    // m_q: Single<&mut Transform,  With<MarkerCommect>>
 ) {
     let Build(act, p_e, d) = tr.event();
     let Ok(pt) = pt_q.get (*p_e) else {
         return;
     };
-    let Some(new_dir) = [pt.forward(), pt.back(), pt.right(), pt.left()]
+    let Some(face_to) = [pt.forward(), pt.back(), pt.right(), pt.left()]
     .into_iter().max_by(|a, b| {
         d.dot(**a).total_cmp(&d.dot(**b))
     }) else {
         return;
     };
 
-    let connect_point = pt.translation + *new_dir * PLATFORM_DIM.z * 0.5;
-    m_q.into_inner().translation = connect_point;
+    let connect_point = pt.translation + *face_to * PLATFORM_DIM.z * 0.5;
+    let add = Quat::from_rotation_arc(*pt.forward(), *face_to).normalize();
 
+    let rotation = pt.rotation * add *  match act {
+        BuildAction::Up => PDir::get_rotation(&PDir::Up),
+        BuildAction::Down => PDir::get_rotation(&PDir::Down),
+        BuildAction::Forward => PDir::get_rotation(&PDir::Forward)
+    };
 
-
-    // let pos = connect_point + *new_dir * PLATFORM_DIM.z * 0.51;
-
-    let mut rotation = Quat::IDENTITY;
-    // let mut rotation = match act {
-    //     BuildAction::Down => Quat::from_rotation_x(-30.0_f32.to_radians()),
-    //     BuildAction::Up => Quat::from_rotation_x(30.0_f32.to_radians()),
-    //     BuildAction::Forward => Quat::IDENTITY,
-    // }
-    // // .mul_quat(pt.rotation)
-    // ;
-
-    if new_dir == pt.forward()  && *act == BuildAction::Up {
-        rotation = PDir::get_rotation(&PDir::Up);
-    }
-
-    if new_dir == pt.forward()  && *act == BuildAction::Down {
-        rotation = PDir::get_rotation(&PDir::Down);
-    }
-
-    if new_dir == pt.back()  && *act == BuildAction::Up {
-        rotation = PDir::get_rotation(&PDir::BackUp);
-    }
-
-    if new_dir == pt.back()  && *act == BuildAction::Forward {
-        rotation = PDir::get_rotation(&PDir::Back);
-        println!(" back , forward");
-    }
-
-    if new_dir == pt.right()  && *act == BuildAction::Up {
-        rotation = PDir::get_rotation(&PDir::RightUp)
-    }
-
-    if new_dir == pt.right()  && *act == BuildAction::Down {
-        rotation = PDir::get_rotation(&PDir::RightDown)
-    }
-
-    if new_dir == pt.left()  && *act == BuildAction::Up {
-        rotation = PDir::get_rotation(&PDir::LeftUp)
-    }
-
-    if new_dir == pt.forward()  && *act == BuildAction::Forward {
-        rotation = PDir::get_rotation(&PDir::Forward);
-        println!(" forward , forward");
-    }
-
-    if new_dir == pt.right()  && *act == BuildAction::Forward {
-        rotation = PDir::get_rotation(&PDir::Right);
-        println!(" right , forward");
-    }
-
-    if new_dir == pt.left()  && *act == BuildAction::Forward {
-        rotation = PDir::get_rotation(&PDir::Left);
-        println!(" left , forward");
-    }
-
-    if new_dir == pt.left()  && *act == BuildAction::Down {
-        rotation = PDir::get_rotation(&PDir::LeftDown);
-        println!(" left , down");
-    }
-
-
-    let mut t = pt.clone();
-    t.rotate_local(rotation);
-    rotation = t.rotation;
     let pos = connect_point +  rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * 0.5);
-    
+    println!("{:?}  {}  {}", *face_to, connect_point, pos);
 
-    // let mut sign = 1.;
-    // if new_dir == pt.back() {
-    //     rotation = Quat::from_rotation_y(180.0_f32.to_radians()) * rotation;
-    //     sign = -1.;
-    // }
-
-    // if new_dir == pt.right() {
-    //     rotation = Quat::from_rotation_y(-90.0_f32.to_radians()) 
-    //     // * rotation
-    //     ;
-    //     // sign = -1.;
-    // }
-
-
-    // let mut pt2 = pt.clone();
-    // pt2.rotate_local(rotation);
-    // pt2.translation = 
-
-
-
-    // let pos = connect_point +  rotation.mul_vec3(*new_dir) *  PLATFORM_DIM.z * 0.5;
-
-    // let pos = connect_point +  rotation.mul_vec3(pt.forward().into()) *  PLATFORM_DIM.z * 0.5;
-    // let pos = connect_point +  sign * rotation.mul_vec3(*new_dir) *  PLATFORM_DIM.z * 0.5;  
-
-
-    println!("{:?}  {}  {}", *new_dir, connect_point, pos);
     cmd.entity(*p_e)
     .clone_and_spawn_with(|b| {
         b.deny::<VisibilityClass>();
@@ -344,28 +258,7 @@ fn build_single(
         Rotation(rotation)
     ))
     ;
-
-
 }
 
+// ---
 
-fn keypress(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut cmd: Commands,
-    q: Single<Entity, With<Platform>>
-) {
-    if keys.just_pressed(KeyCode::KeyH) {
-        let p_e = q.into_inner();
-
-        cmd.entity(p_e)
-        // .clone_and_spawn()
-        .clone_and_spawn_with(|b| {
-            b.deny::<VisibilityClass>();
-        })
-        .insert((
-            Position::from_xyz(10.1, 0., 0.0),
-            Name::new("P2")
-        ));
-    }
-        
-}
