@@ -68,6 +68,10 @@ features = [
     # "async_executor"
 ]
 
+[dependencies.bevy_hanabi]
+version = "0.16.0"
+default-features = false 
+features = ["3d", "serde"] 
  
 
 

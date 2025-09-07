@@ -20,7 +20,8 @@ pub struct Build(pub BuildAction, pub Entity, pub Dir3);
 pub enum BuildAction {
     Forward,
     Up,
-    Down
+    Down,
+    Delete
 }
 
 #[derive(Component)]

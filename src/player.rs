@@ -215,7 +215,6 @@ fn animate(
 
 fn get_platform(pt: &Transform, raycast_q: &SpatialQuery) -> Option<RayHitData> {
     raycast_q.cast_ray(
-        // pt.translation + pt.forward() * 2., 
         pt.translation + pt.down() * 0.01, 
         Dir3::NEG_Y,
         f32::MAX,
@@ -248,16 +247,18 @@ fn build_action(
     raycast_q: SpatialQuery,
     mut cmd: Commands
  ) {
+
+
     let (e, mut ad, t) = ad_q.into_inner();
     let Some(hit) = get_platform(t, &raycast_q) else {
-        println!("no platform");
+        println!("platform not detected");
         return;
     };
 
     cmd.trigger(Build(tr.event().0, hit.entity, t.forward()));
-    
+  
     ad.animation_index = 4;
-    cmd.entity(e).insert(Interval(Timer::new(Duration:: from_secs(2), TimerMode::Once)));
+    cmd.entity(e).insert(Interval(Timer::new(Duration:: from_millis(500), TimerMode::Once)));
 }
 
 // ---

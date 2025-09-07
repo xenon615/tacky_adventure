@@ -60,6 +60,8 @@ fn startup(
                 (BuildAction::Up, "Up".to_string(), ),
                 (BuildAction::Forward, "Forward".to_string()),
                 (BuildAction::Down, "Down".to_string()),
+                (BuildAction::Delete, "Delete".to_string()),
+
             ];
             for (k, v) in menu.iter() {
                 cont.spawn(button(v.as_str())).insert(*k);

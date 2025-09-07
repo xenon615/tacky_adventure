@@ -1,7 +1,7 @@
 use bevy::{
-    gizmos, pbr::Material, prelude::*, render::{render_resource::{AsBindGroup, ShaderRef}, view::VisibilityClass}
+    gizmos, math::VectorSpace, pbr::Material, prelude::*, render::{render_resource::{AsBindGroup, ShaderRef}, view::VisibilityClass}
 };
-use avian3d::prelude::*;
+use avian3d::{math::Quaternion, prelude::*};
 
 use crate::shared::{Build, BuildAction, Player};
 
@@ -19,7 +19,10 @@ impl Plugin for PlatformPlugin {
 
 // ---
 
-pub const PLATFORM_DIM: Vec3 = Vec3::new(5., 0.1, 10.);
+pub const PLATFORM_DIM: Vec3 = Vec3::new(4., 0.1, 10.);
+pub const PITCH_ANGLE: f32 = 30.0_f32.to_radians();
+pub const YAW_ANGLE: f32 = 90.0_f32.to_radians();
+
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
 pub struct PlatformMaterial {
@@ -47,8 +50,8 @@ pub struct Platform;
 #[allow(dead_code)]
 fn gismos(
     mut gizmos: Gizmos,
-    // t_q: Query<&Transform, With<Platform>>,
-    t_q: Query<&Transform, With<Player>>
+    t_q: Query<&Transform, With<Platform>>,
+    // t_q: Query<&Transform, With<Player>>
 ) {
     for t in &t_q {
         gizmos.ray(t.translation, t.forward() * PLATFORM_DIM.z /2., Color::srgb(0., 0., 1.));
@@ -86,18 +89,18 @@ enum PDir {
 impl PDir {
     fn get_rotation(r: &PDir ) -> Quat {
         match r {
-            Self::Left => Quat::from_rotation_y(90.0_f32.to_radians()),
-            Self::Right => Quat::from_rotation_y(-90.0_f32.to_radians()),
-            Self::Up => Quat::from_rotation_x(30.0_f32.to_radians()),
-            Self::Down => Quat::from_rotation_x(-30.0_f32.to_radians()),
+            Self::Left => Quat::from_rotation_y(YAW_ANGLE),
+            Self::Right => Quat::from_rotation_y(-YAW_ANGLE),
+            Self::Up => Quat::from_rotation_x(PITCH_ANGLE),
+            Self::Down => Quat::from_rotation_x(-PITCH_ANGLE),
             Self::Forward => Quat::IDENTITY,
-            Self::Back =>  Quat::from_rotation_y(180.0_f32.to_radians()),
-            Self::BackUp =>  Quat::from_rotation_y(180.0_f32.to_radians()) * Quat::from_rotation_x(30.0_f32.to_radians()),
-            Self::BackDown =>  Quat::from_rotation_y(180.0_f32.to_radians()) * Quat::from_rotation_x(-30.0_f32.to_radians()),
-            Self::LeftDown => Quat::from_rotation_y(90.0_f32.to_radians()) * Quat::from_rotation_x(-30.0_f32.to_radians()),
-            Self::LeftUp => Quat::from_rotation_y(90.0_f32.to_radians()) * Quat::from_rotation_x(30.0_f32.to_radians()),
-            Self::RightDown => Quat::from_rotation_y(-90.0_f32.to_radians()) * Quat::from_rotation_x(-30.0_f32.to_radians()),
-            Self::RightUp => Quat::from_rotation_y(-90.0_f32.to_radians()) * Quat::from_rotation_x(30.0_f32.to_radians()),
+            Self::Back =>  Quat::from_rotation_y(2. * YAW_ANGLE),
+            Self::BackUp =>  Quat::from_rotation_y(2. * YAW_ANGLE) * Quat::from_rotation_x(PITCH_ANGLE),
+            Self::BackDown =>  Quat::from_rotation_y(2. * YAW_ANGLE) * Quat::from_rotation_x(-PITCH_ANGLE),
+            Self::LeftDown => Quat::from_rotation_y(YAW_ANGLE) * Quat::from_rotation_x(-PITCH_ANGLE),
+            Self::LeftUp => Quat::from_rotation_y(YAW_ANGLE) * Quat::from_rotation_x(PITCH_ANGLE),
+            Self::RightDown => Quat::from_rotation_y(-YAW_ANGLE) * Quat::from_rotation_x(-PITCH_ANGLE),
+            Self::RightUp => Quat::from_rotation_y(-YAW_ANGLE) * Quat::from_rotation_x(PITCH_ANGLE),
         }
     }
 }
@@ -107,11 +110,9 @@ fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<PlatformMaterial>>,
-    // mut materials_s: ResMut<Assets<StandardMaterial>>,
 ) {
     let mesh = meshes.add(Cuboid::from_size(PLATFORM_DIM));
     let color = materials.add(PlatformMaterial {color: Color::srgba (0.4, 0., 1., 0.1).into() }); 
-    // let color = materials.add(Color::hsla(220., 1., 0.5, 0.4)); 
 
     
     let rotations = vec![
@@ -157,9 +158,14 @@ fn startup(
                 PDir::Left | PDir::LeftDown | PDir::LeftUp => trans.left(),
                 _ => trans.forward()
             };
-            let step = if dir == trans.forward() { PLATFORM_DIM.z} else {PLATFORM_DIM.x};
 
-            let connect_point = trans.translation + dir * step * 0.5;    
+            let (step, shift) = if ![trans.forward(), trans.back()].contains(&dir) {
+                (PLATFORM_DIM.x, trans.forward() * 0.5 * (PLATFORM_DIM.z - PLATFORM_DIM.x))
+            } else {
+                (PLATFORM_DIM.z, Vec3::ZERO)
+            };
+
+            let connect_point = trans.translation + dir * step * 0.5 + shift;    
             trans.rotate_local(PDir::get_rotation(rs));
             pos = connect_point + trans.rotation.mul_vec3(-Vec3::Z * PLATFORM_DIM.z * 0.51);
         }
@@ -177,25 +183,17 @@ fn startup(
         
     }
 
-    // cmd.spawn((
-    //     Mesh3d(meshes.add(Cuboid::from_length(1.))),
-    //     MeshMaterial3d(materials_s.add(Color::WHITE)),
-    //     MarkerCommect
-    // ));
 
 }
 
-// ---
-#[derive(Component)]
-struct MarkerCommect;
 
 // ---
 
 fn build_single(
     tr: Trigger<Build>,
     mut cmd: Commands,
-    pt_q: Query<&Transform, Without<MarkerCommect>>,
-    // m_q: Single<&mut Transform,  With<MarkerCommect>>
+    pt_q: Query<&Transform>,
+    spatial: SpatialQuery,
 ) {
     let Build(act, p_e, d) = tr.event();
     let Ok(pt) = pt_q.get (*p_e) else {
@@ -207,29 +205,42 @@ fn build_single(
     }) else {
         return;
     };
-    let step = if [pt.forward(), pt.back()].contains(&face_to)  { PLATFORM_DIM.z} else {PLATFORM_DIM.x};
-
-    let connect_point = pt.translation + *face_to * step * 0.5;
+   
     let add = Quat::from_rotation_arc(*pt.forward(), *face_to).normalize();
 
     let rotation = pt.rotation * add *  match act {
         BuildAction::Up => PDir::get_rotation(&PDir::Up),
         BuildAction::Down => PDir::get_rotation(&PDir::Down),
-        BuildAction::Forward => PDir::get_rotation(&PDir::Forward)
+        BuildAction::Forward | BuildAction::Delete => PDir::get_rotation(&PDir::Forward)
     };
 
-    let pos = connect_point +  rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * 0.5);
-    println!("{:?}  {}  {}", *face_to, connect_point, pos);
+    let (step, shift) = if ![pt.forward(), pt.back()].contains(&face_to) {
+        (PLATFORM_DIM.x, pt.forward() * 0.5 * (PLATFORM_DIM.z - PLATFORM_DIM.x))
+    } else {
+        (PLATFORM_DIM.z, Vec3::ZERO)
+    };
 
-    cmd.entity(*p_e)
-    .clone_and_spawn_with(|b| {
-        b.deny::<VisibilityClass>();
-    })
-    .insert((   
-        Position::new(pos),
-        Rotation(rotation)
-    ))
-    ;
+    let connect_point = pt.translation + *face_to * step * 0.5 + shift;
+    let pos = connect_point +  rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * 0.5);
+
+    // println!("{:?}  {}  {}", *face_to, connect_point, pos);
+    if *act != BuildAction::Delete {
+        cmd.entity(*p_e)
+        .clone_and_spawn_with(|b| {
+            b.deny::<VisibilityClass>();
+        })
+        .insert((   
+            Position::new(pos),
+            Rotation(rotation)
+        ))
+        ;
+    } else {
+        spatial.shape_intersections(&Collider::sphere(0.5), connect_point, Quaternion::IDENTITY, &SpatialQueryFilter::default())
+        .iter()
+        .filter(| e | **e != *p_e)
+        .for_each(|e| cmd.entity(*e).despawn());
+    }
+
 }
 
 // ---

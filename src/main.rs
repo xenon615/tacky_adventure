@@ -1,12 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use bevy::{
-    prelude::*,
-    render::{
-        RenderApp,
-        batching::gpu_preprocessing::{GpuPreprocessingSupport, GpuPreprocessingMode}
-
-    }
-};
+use bevy::prelude::*;
+use bevy_hanabi::prelude::*;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_egui::EguiPlugin;
 
@@ -26,6 +20,8 @@ mod player;
 mod platform;
 mod lift;
 mod ui;
+mod effects;
+mod exit;
 
 fn main() {
     let mut app = App::new();
@@ -35,16 +31,18 @@ fn main() {
         DefaultPlugins,
         PhysicsPlugins::default(),
         // PhysicsDebugPlugin::default(),
+        HanabiPlugin,
         camera::CameraPlugin,
         env::EnvPlugin,
         eyes::EyesPlugin,
         player::PlayerPlugin,
         platform::PlatformPlugin,
         lift::LiftPlugin,
-        ui::UiPlugin
+        ui::UiPlugin,
+        exit::ExitPlugin
     ))
-    .add_plugins(EguiPlugin::default() )
-    .add_plugins(WorldInspectorPlugin::new())
+    // .add_plugins(EguiPlugin::default() )
+    // .add_plugins(WorldInspectorPlugin::new())
     .run()
     ;
 }
