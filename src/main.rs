@@ -11,6 +11,8 @@ use avian3d::{
     // debug_render::PhysicsDebugPlugin
 };
 
+use crate::shared::GameStage;
+
 mod shared;
 mod camera;
 mod env;
@@ -22,6 +24,7 @@ mod lift;
 mod ui;
 mod effects;
 mod exit;
+mod monologue;
 
 fn main() {
     let mut app = App::new();
@@ -34,15 +37,17 @@ fn main() {
         HanabiPlugin,
         camera::CameraPlugin,
         env::EnvPlugin,
-        eyes::EyesPlugin,
+        // eyes::EyesPlugin,
         player::PlayerPlugin,
         platform::PlatformPlugin,
-        lift::LiftPlugin,
+        // lift::LiftPlugin,
         ui::UiPlugin,
-        exit::ExitPlugin
+        exit::ExitPlugin,
+        monologue::MonologuePlugin
     ))
-    // .add_plugins(EguiPlugin::default() )
-    // .add_plugins(WorldInspectorPlugin::new())
+    .add_plugins(EguiPlugin::default() )
+    .add_plugins(WorldInspectorPlugin::new())
+    .init_state::<GameStage>()
     .run()
     ;
 }

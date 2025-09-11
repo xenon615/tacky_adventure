@@ -5,8 +5,7 @@ use bevy::{
 };
 
 use crate::{
-    platform::PLATFORM_DIM,
-    shared::Player
+    shared::{PLATFORM_DIM, Player}
 };
 
 // ---
@@ -25,7 +24,7 @@ impl Plugin for EyesPlugin {
         .add_systems(Update, check_blink.run_if(any_with_component::<Blinking>))
         ;
     }
-}
+} 
 
 //  ---
 

@@ -1,9 +1,9 @@
 use bevy::{
-    gizmos, math::VectorSpace, pbr::Material, prelude::*, render::{render_resource::{AsBindGroup, ShaderRef}, view::VisibilityClass}
+    gizmos,  pbr::Material, prelude::*, render::{render_resource::{AsBindGroup, ShaderRef}, view::VisibilityClass}
 };
 use avian3d::{math::Quaternion, prelude::*};
 
-use crate::shared::{Build, BuildAction, Player};
+use crate::shared::{Build, BuildAction, Exit, GameStage, PLATFORM_DIM};
 
 pub struct PlatformPlugin;
 impl Plugin for PlatformPlugin {
@@ -12,6 +12,7 @@ impl Plugin for PlatformPlugin {
         .add_plugins(MaterialPlugin::<PlatformMaterial>::default())
         .add_systems(Startup, startup)
         // .add_systems(Update, gismos)
+        .add_systems(OnEnter(GameStage::Two), change_stage)
         .add_observer(build_single)
         ;
     }
@@ -19,15 +20,18 @@ impl Plugin for PlatformPlugin {
 
 // ---
 
-pub const PLATFORM_DIM: Vec3 = Vec3::new(4., 0.1, 10.);
+
 pub const PITCH_ANGLE: f32 = 30.0_f32.to_radians();
 pub const YAW_ANGLE: f32 = 90.0_f32.to_radians();
+pub const GAP: f32 = 0.01;
 
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
 pub struct PlatformMaterial {
     #[uniform(0)]
-    pub color: LinearRgba,
+    color: LinearRgba,
+    #[uniform(1)]
+    stage_index: u32
 }
 
 impl Material for PlatformMaterial {
@@ -45,28 +49,22 @@ impl Material for PlatformMaterial {
 #[derive(Component, Clone)]
 pub struct Platform;
 
+#[derive(Resource)]
+pub struct PlatformMaterialHandle(Handle<PlatformMaterial>);
+
+
 // ---
 
 #[allow(dead_code)]
 fn gismos(
     mut gizmos: Gizmos,
-    t_q: Query<&Transform, With<Platform>>,
+    t_q: Query<&Transform, Or<(With<Platform>, With<Exit>)>>,
     // t_q: Query<&Transform, With<Player>>
 ) {
     for t in &t_q {
         gizmos.ray(t.translation, t.forward() * PLATFORM_DIM.z /2., Color::srgb(0., 0., 1.));
         gizmos.ray(t.translation, t.right() * PLATFORM_DIM.z /2., Color::srgb(1., 0., 0.));
         gizmos.ray(t.translation, t.up() * PLATFORM_DIM.z /2., Color::srgb(0., 1., 0.));
-        // gizmos.ray(t.translation + t.forward() * PLATFORM_DIM.z /2., t.up() * 10., Color::srgb(1., 0., 0.));
-
-    //     let r = Quat::from_rotation_y(90.0_f32.to_radians());
-    //     // let v = r.mul_vec3(-Vec3::Z);
-    //     let vp = r.mul_vec3(-Vec3::Z).reject_from(*t.up()).normalize();
-
-    //     // gizmos.ray(t.translation, v * 10., Color::srgb(1., 0., 1.));
-    //     gizmos.ray(t.translation, vp * PLATFORM_DIM.z / 2., Color::srgb(1., 0., 0.2));
-            // gizmos.axes(*t, PLATFORM_DIM.z /2.);
-
     }
 }
 
@@ -105,47 +103,33 @@ impl PDir {
     }
 }
 
+// ---
 
 fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<PlatformMaterial>>,
+    stage: Res<State<GameStage>>
 ) {
-    let mesh = meshes.add(Cuboid::from_size(PLATFORM_DIM));
-    let color = materials.add(PlatformMaterial {color: Color::srgba (0.4, 0., 1., 0.1).into() }); 
 
+    let mesh = meshes.add(Cuboid::from_size(PLATFORM_DIM));
+    let material = materials.add(PlatformMaterial {
+        color: Color::srgba (0., 0., 1., 0.1).into(), 
+        stage_index:GameStage::get_index(&stage) 
+    }); 
+    cmd.insert_resource(PlatformMaterialHandle(material.clone()));
     
     let rotations = vec![
         PDir::Forward,
-        PDir::Right,
-        PDir::Down,
-        PDir::Up,
-        PDir::Right,
-        PDir::Down,
-        PDir::Up,
-        // PDir::Left,
-        // PDir::Up,
-        // PDir::Down,
-        // PDir::Right,
-        // PDir::Up,
-        // PDir::Down,
-        // PDir::Right,
-        // PDir::Up,
-        // PDir::Down,
-        // PDir::Down,
-        // PDir::Up,
-        // PDir::Right,
-        // PDir::Left,
-        // PDir::Forward,
-        // PDir::Right,
-        // PDir::Down,
-        // PDir::Up,
-        // PDir::Up,
-        // PDir::Down,
-        // PDir::Forward,
-        // PDir::RightUp,
-        // PDir::Down,
-        // PDir::Forward,
+        PDir::Forward,
+        PDir::Forward,
+        PDir::Forward,
+        PDir::Forward,
+        PDir::Forward,
+        PDir::Forward,
+        PDir::Forward,
+        PDir::Forward,
+        PDir::Forward,        
     ];
 
     let mut pos = Vec3::ZERO;
@@ -167,25 +151,23 @@ fn startup(
 
             let connect_point = trans.translation + dir * step * 0.5 + shift;    
             trans.rotate_local(PDir::get_rotation(rs));
-            pos = connect_point + trans.rotation.mul_vec3(-Vec3::Z * PLATFORM_DIM.z * 0.51);
+            pos = connect_point + trans.rotation.mul_vec3(-Vec3::Z * PLATFORM_DIM.z * (0.5 + GAP));
         }
 
         trans = Transform::from_translation(pos).with_rotation(trans.rotation);
         cmd.spawn((
             trans,
             Mesh3d(mesh.clone()),
-            MeshMaterial3d(color.clone()),
+            MeshMaterial3d(material.clone()),
             Collider::cuboid(PLATFORM_DIM.x, PLATFORM_DIM.y, PLATFORM_DIM.z),
             RigidBody::Static,
             Platform,
             Name::new("Platform")
         ));
-        
     }
 
 
 }
-
 
 // ---
 
@@ -221,7 +203,7 @@ fn build_single(
     };
 
     let connect_point = pt.translation + *face_to * step * 0.5 + shift;
-    let pos = connect_point +  rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * 0.5);
+    let pos = connect_point +  rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * (0.5 + GAP));
 
     // println!("{:?}  {}  {}", *face_to, connect_point, pos);
     if *act != BuildAction::Delete {
@@ -245,3 +227,12 @@ fn build_single(
 
 // ---
 
+fn change_stage(
+    mh: Res<PlatformMaterialHandle>,
+    mut materials: ResMut<Assets<PlatformMaterial>>
+) {
+    let Some(m) = materials.get_mut(&mh.0) else {
+        return;
+    };
+    m.stage_index = 1;
+}

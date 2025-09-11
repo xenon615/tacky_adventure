@@ -5,6 +5,7 @@
 }
 
 @group(2) @binding(0) var <uniform> base_color: vec4f;
+@group(2) @binding(1) var <uniform> stage_index: u32;
 
 fn palette(t: f32) ->  vec3f {
     let a = vec3f(0.5, 0.5, 0.5);
@@ -16,21 +17,16 @@ fn palette(t: f32) ->  vec3f {
 
 @fragment  
 fn fragment(vo: VertexOutput) -> @location(0) vec4f {
+    if (stage_index == 0) {
+        return vec4f(1, 1, 1, 1);
+    } 
+
     var uv = 2. * vo.uv - 1;
     var uv0 = uv;
-    var finalColor = base_color.xyz;
-
     uv = fract(uv * 2) - 0.5;
-    var col = 
-    palette(
+    var col = palette(
         sin(length(uv0) + globals.time)
     );
-    var d = length(uv);
-    // d = sin(d * 8 + globals.time) / 8;
-    // d = abs(d);
-    d = 0.02 / d;
-    finalColor += col * d; 
-    return vec4f(finalColor, base_color.a);
-    
-    
+    let d = 0.02 / length(uv);
+    return vec4f(base_color.xyz + col * d, base_color.a);
 }

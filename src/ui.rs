@@ -2,14 +2,18 @@ use bevy:: {
     color::palettes::css, prelude::*
 };
 
-use crate::shared::{CastBuild, BuildAction};
+use crate::shared::{BuildAction, CastBuild, GameStage};
 
 pub struct UiPlugin;
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app
-        .add_systems(Startup, startup)
-        .add_systems(Update, keypress.run_if(resource_changed::<ButtonInput<KeyCode>>))
+        // .add_systems(Startup, startup)
+        .add_systems(OnEnter(GameStage::Two), startup)
+        .add_systems(Update, keypress
+            .run_if(resource_changed::<ButtonInput<KeyCode>>)
+            .run_if(in_state(GameStage::Two))
+        )
         .add_systems(Update, interact_buttons)
         ;
     }

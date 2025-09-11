@@ -18,6 +18,7 @@ use avian3d::schedule::PhysicsSet;
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
 use crate::shared::Player;
+use crate::shared::GameStage;
 
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
@@ -36,6 +37,7 @@ impl Plugin for CameraPlugin {
         )
         .add_systems(Update, distancing.run_if(on_event::<MouseWheel>)) 
         // .add_observer(cam_reset)   
+        .add_systems(Update, switch_state.run_if(state_changed::<GameStage>))
         ; 
     }
 } 
@@ -61,46 +63,25 @@ pub struct CamFollowParams {
 
 fn setup (
     mut cmd: Commands,
-    assets: ResMut<AssetServer> 
+    
 ) {
     cmd.spawn((
         Camera3d::default(),
         Transform::from_xyz(100., 0., 0.).looking_at(Vec3::ZERO, Vec3::Y),
-
-        // Transform::from_xyz(-12.162, 6.735,  6.556).looking_at(Vec3::ZERO, Vec3::Y),
-        
         Cam,
         Camera {
             hdr: true,
             ..default()
         },
-        Skybox {
-            // image: assets.load("skyboxes/interstellar.ktx2"),
-            // image: assets.load("skyboxes/space_green.ktx2"),
-            image: assets.load("skyboxes/city.ktx2"),
-            brightness: 500.,
-            ..default()
-        },
-        // Atmosphere::EARTH,
-        MotionBlur::default(),
-        // DistanceFog {
-        //     color: Color::srgb(0.25, 0.25, 0.25),
-        //     falloff: FogFalloff::Linear {
-        //         start: 50.0,
-        //         end: 200.0,
-        //     },
-        //     ..default()
-        // },
-
         // PanOrbitCamera::default(),
         NoIndirectDrawing
         
     ));
 
-        cmd.insert_resource(
+    cmd.insert_resource(
         CamFollowParams{
-            tranlation_bias: Vec3::new(0., 20., 18.),
-            look_bias: Vec3::new(0., 1.5, 0.),
+            tranlation_bias: Vec3::new(0., 3., 15.),
+            look_bias: Vec3::new(0., 4.5, 0.),
             translation_speed: 3.,
             rotation_speed: 8.
         }
@@ -169,4 +150,38 @@ fn cam_reset(
     cp.tranlation_bias.x = 0.;
     cp.tranlation_bias.z = cp.tranlation_bias.z.abs();
     // cp.tranlation_bias.y = 2.;
+}
+
+// ---
+
+fn switch_state(
+    mut cmd: Commands,
+    assets: ResMut<AssetServer> ,
+    cam_q: Single<Entity, With<Cam>>,
+    state: Res<State<GameStage>>
+) {
+
+    if *state == GameStage::Two {
+
+        let cam_e = cam_q.into_inner();
+        cmd.entity(cam_e).insert((
+            Skybox {
+                image: assets.load("skyboxes/interstellar_blue.ktx2"),
+                brightness: 500.,
+                ..default()
+            },
+
+            MotionBlur::default(),
+            DistanceFog {
+                color: Color::srgb(0.25, 0.25, 0.25),
+                falloff: FogFalloff::Linear {
+                    start: 50.0,
+                    end: 200.0,
+                },
+                ..default()
+            },
+        // Atmosphere::EARTH,
+
+        ));
+    }
 }

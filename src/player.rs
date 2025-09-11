@@ -12,7 +12,7 @@ use bevy_tnua_avian3d::*;
 use bevy_tnua_avian3d::TnuaAvian3dPlugin;
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
-use crate::shared::{Build, CastBuild};
+use crate::shared::{Build, CastBuild, SetMonologueText};
 use crate::shared::{MakeLift, Player};
 
 
@@ -111,7 +111,7 @@ fn apply_controls(
 fn movement(
     player_q: Single<(&Transform, &Movement, &mut TnuaController), With<Player>>
 ) {
-    let (player_transform, movement  ,mut controller) = player_q.into_inner();
+    let (player_transform, movement, mut controller) = player_q.into_inner();
     let desired_forward =  Quat::from_rotation_y(movement.rotation as f32 * -3_f32.to_radians()).mul_vec3(player_transform.forward() * 1.);
 
     let speed = if movement.direction > 0 {16.} else if movement.direction < 0  {-4.} else { 0.}; 
@@ -165,52 +165,6 @@ fn animate(
     }
 }
 
-
-// fn animate(
-//     player_q: Single<(&Transform, &mut AniData, &TnuaController), With<Player>>
-// ) {
-    
-//     let (t, mut ad, tc) = player_q.into_inner();
-//     // println!("{:?}", ad.animation_key);
-//     let Some(basis) = tc.dynamic_basis()  else {
-//         return;
-//     };
-    
-//     let back = t.forward().dot(basis.effective_velocity().normalize()) < 0.;
-
-//     let candidate = if basis.is_airborne() {
-//         2
-//     } else if basis.effective_velocity().length() > 0.1 {
-//         if back {3} else {1}
-//     } else {0};
-
-//     if candidate != ad.animation_index {
-//         ad.animation_index = candidate;
-//     }
-// }
-
-// ---
-
-// fn actions(
-//     keys: Res<ButtonInput<KeyCode>>,
-//     mut cmd: Commands,
-//     raycast_q: SpatialQuery,
-//     player_q: Single<&Transform, With<Player>>,
-// ) {
-//     if keys.pressed(KeyCode::KeyL) {
-//         let player_t = player_q.into_inner();
-//         if let Some(hit) = raycast_q.cast_ray(
-//             player_t.translation + player_t.forward() * 1., 
-//             Dir3::NEG_Y,
-//             f32::MAX,
-//             false, 
-//             &SpatialQueryFilter::default()
-//         ) {
-//             cmd.trigger(MakeLift(hit.entity));
-//         }
-//     }
-// }
-
 // ---
 
 fn get_platform(pt: &Transform, raycast_q: &SpatialQuery) -> Option<RayHitData> {
@@ -235,6 +189,7 @@ fn actions(
         let player_t = player_q.into_inner();
         if let Some(hit) = get_platform(player_t, &raycast_q) {
             cmd.trigger(MakeLift(hit.entity));
+            cmd.trigger(SetMonologueText("YES!"));
         }
     }
 }
