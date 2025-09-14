@@ -25,6 +25,8 @@ mod ui;
 mod effects;
 mod exit;
 mod monologue;
+mod help;
+mod aimer;
 
 fn main() {
     let mut app = App::new();
@@ -40,13 +42,15 @@ fn main() {
         // eyes::EyesPlugin,
         player::PlayerPlugin,
         platform::PlatformPlugin,
-        // lift::LiftPlugin,
+        lift::LiftPlugin,
         ui::UiPlugin,
         exit::ExitPlugin,
-        monologue::MonologuePlugin
+        monologue::MonologuePlugin,
+        help:: HelpPlugin,
+        aimer::AimerPlugin
     ))
-    .add_plugins(EguiPlugin::default() )
-    .add_plugins(WorldInspectorPlugin::new())
+    // .add_plugins(EguiPlugin::default() )
+    // .add_plugins(WorldInspectorPlugin::new())
     .init_state::<GameStage>()
     .run()
     ;

@@ -15,9 +15,9 @@ impl Plugin for MonologuePlugin {
     fn build(&self, app: &mut App) {
         app
         .add_systems(Startup, startup)
-        .add_systems(Update, follow.run_if(any_match_filter::<ActiveBallon<Ballon, HideTime>>)
-        )
-        .add_systems(Update, hide_ballon.run_if(any_with_component::<HideTime>))
+        // .add_systems(Update, follow.run_if(any_match_filter::<ActiveBallon<Ballon, HideTime>>))
+        .add_systems(Update, (follow,hide_ballon).run_if(any_with_component::<HideTime>))
+        // .add_systems(Update, hide_ballon.run_if(any_with_component::<HideTime>))
         .add_observer(set_text)
         ;
     }
@@ -25,10 +25,10 @@ impl Plugin for MonologuePlugin {
 
 // ---
 
-#[derive(QueryFilter)]
-struct ActiveBallon<T1: Component, T2: Component > {
-    _gt: (With<T1>, With<T2>)
-}
+// #[derive(QueryFilter)]
+// struct ActiveBallon<T1: Component, T2: Component > {
+//     _gt: (With<T1>, With<T2>)
+// }
 
 #[derive(Component)]
 pub struct Ballon;

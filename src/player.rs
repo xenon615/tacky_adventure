@@ -4,7 +4,7 @@ use avian3d::prelude::*;
 use bevy::{
     // gizmos, 
     // pbr:: {NotShadowCaster, NotShadowReceiver}, 
-    color::palettes::basic, input::{keyboard::KeyboardInput, mouse::MouseMotion}, prelude::*
+    color::palettes::basic, ecs::system::entity_command::observe, input::{keyboard::KeyboardInput, mouse::MouseMotion}, prelude::*, scene::SceneInstanceReady
 };
 use bevy_tnua::{prelude::*, TnuaAnimatingState};
 use bevy_tnua_avian3d::*;
@@ -12,9 +12,10 @@ use bevy_tnua_avian3d::*;
 use bevy_tnua_avian3d::TnuaAvian3dPlugin;
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
-use crate::shared::{Build, CastBuild, SetMonologueText};
-use crate::shared::{MakeLift, Player};
 
+// use crate::shared::{SetMonologueText};
+// use crate::shared::{MakeLift, Player};
+use crate::shared:: {Player, CastBuild,  SetMonologueText};
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
@@ -31,7 +32,6 @@ impl Plugin for PlayerPlugin {
             movement,
             animate
         ).in_set(TnuaUserControlsSystemSet))
-        .add_systems(Update, actions.run_if(on_event::<KeyboardInput>))
         .add_systems(Update, timer.run_if(any_with_component::<Interval>))
         .add_observer(build_action)
         ;
@@ -39,7 +39,6 @@ impl Plugin for PlayerPlugin {
 }
 
 // ---
-
 
 #[derive(Component)]
 pub struct Movement {
@@ -62,7 +61,7 @@ fn startup(
     all_animations.add("Player", "models/player.glb", 5, &mut graphs, &asset);
     cmd.spawn((
         SceneRoot(asset.load(GltfAssetLabel::Scene(0).from_asset("models/player.glb"))),
-        Transform::from_xyz(0., 50., 0.)
+        Transform::from_xyz(0., 10., 4.)
         .looking_to(-Vec3::Z, Vec3::Y),
         Player,
         AniData::new("Player", 1),
@@ -73,9 +72,20 @@ fn startup(
             (Vec3::Y, Quat::IDENTITY,  Collider::capsule(0.5, 1.))
         ]),
         Movement{direction: 0, rotation: 0, jump: false},
-        Name::new("Player")
+        Name::new("Player"),
+
      ))
+     .observe(on_ready)
      ;
+}
+
+// ---
+
+fn on_ready (
+    _: Trigger<SceneInstanceReady>,
+    mut cmd: Commands
+) {
+    cmd.trigger(SetMonologueText("Hi"));
 }
 
 // ---
@@ -84,6 +94,10 @@ fn apply_controls(
     keys: Res<ButtonInput<KeyCode>>,
     player_q: Single<&mut Movement, With<Player>>,
 ) {
+    if keys.any_pressed([KeyCode::AltLeft, KeyCode::AltRight]) {
+        return;
+    }
+    
     let forward_keys = [KeyCode::ArrowUp,  KeyCode::KeyW];
     let back_keys = [KeyCode::ArrowDown,  KeyCode::KeyS];
     let right_keys = [KeyCode::ArrowRight,  KeyCode::KeyD];
@@ -167,54 +181,17 @@ fn animate(
 
 // ---
 
-fn get_platform(pt: &Transform, raycast_q: &SpatialQuery) -> Option<RayHitData> {
-    raycast_q.cast_ray(
-        pt.translation + pt.down() * 0.01, 
-        Dir3::NEG_Y,
-        f32::MAX,
-        false, 
-        &SpatialQueryFilter::default()
-    )
-}
-
-// ---
-
-fn actions(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut cmd: Commands,
-    raycast_q: SpatialQuery,
-    player_q: Single<&Transform, With<Player>>,
-) {
-    if keys.pressed(KeyCode::KeyL) {
-        let player_t = player_q.into_inner();
-        if let Some(hit) = get_platform(player_t, &raycast_q) {
-            cmd.trigger(MakeLift(hit.entity));
-            cmd.trigger(SetMonologueText("YES!"));
-        }
-    }
-}
-
-// ---
-
 fn build_action(
-    tr: Trigger<CastBuild>,
-    ad_q: Single<(Entity, &mut AniData, &Transform), With<Player>>,
-    raycast_q: SpatialQuery,
+    _tr: Trigger<CastBuild>,
+    ad_q: Single<(Entity, &mut AniData), With<Player>>,
     mut cmd: Commands
  ) {
-
-
-    let (e, mut ad, t) = ad_q.into_inner();
-    let Some(hit) = get_platform(t, &raycast_q) else {
-        println!("platform not detected");
-        return;
-    };
-
-    cmd.trigger(Build(tr.event().0, hit.entity, t.forward()));
-  
+    let (e, mut ad) = ad_q.into_inner();
     ad.animation_index = 4;
     cmd.entity(e).insert(Interval(Timer::new(Duration:: from_millis(500), TimerMode::Once)));
 }
+
+
 
 // ---
 

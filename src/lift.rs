@@ -1,19 +1,25 @@
-use bevy::math::VectorSpace;
+use bevy::input::common_conditions::input_just_pressed;
 use bevy::prelude::*;
 use avian3d::prelude::*;
 use bevy_hanabi::prelude::*;
 
-use crate::shared::MakeLift;
-use crate::platform::Platform;
-use crate::effects::green_steam;
+use crate:: {
+    effects::steam, 
+    help::SetHelpData, 
+
+    shared::{get_platform, GameStage,  Player, SetMonologueText}
+};
+
+
+
 
 pub struct LiftPlugin;
 impl Plugin for LiftPlugin {
     fn build(&self, app: &mut App) {
         app
-        .add_systems(Startup, prepare_effect)
         .add_systems(Update, move_lift.run_if(any_with_component::<Lift>))
-        .add_observer(switch_lift)
+        .add_systems(OnEnter(GameStage::Lift), (prepare_effect, set_help))
+        .add_systems(Update, switch_lift.run_if(input_just_pressed(KeyCode::KeyL)))
         ;
     }
 }
@@ -26,79 +32,8 @@ struct Lift;
 #[derive(Component)]
 struct LiftEffect;
 
-const FORCE_UP: f32 = 50.;
+const FORCE_UP: f32 = 150.;
 const FORCE_DOWN: f32 = 25.;
-
-// ---
-
-// fn switch_lift(
-//     tr: Trigger<MakeLift>,
-//     mut platform_q: Query<(Entity, &mut RigidBody, Option<&Lift>), With<Platform>>,
-//     effect_q: Single<(Entity, &mut EffectSpawner), With<LiftEffect>>,
-//     mut cmd: Commands
-// ) {
-//     let p_entity = tr.event().0;
-
-//     let (ee, mut es)  = effect_q.into_inner();
-
-//     for (pe, mut rb, ol) in platform_q.iter_mut() {
-//         if (pe == p_entity) && ol.is_none() {
-//             *rb = RigidBody::Dynamic;
-//             es.active = true;
-
-//             cmd.entity(pe).insert((
-//                 LockedAxes::ALL_LOCKED.unlock_translation_y(),
-//                 Friction::new(0.0).with_combine_rule(CoefficientCombine::Min),
-//                 LinearDamping(2.),
-//                 ExternalForce::new(Vec3::Y * FORCE_UP).with_persistence(true),
-//                 Lift 
-//             )).add_child(ee)
-//             ;            
-//         } else  {
-//             cmd.entity(pe).remove_children(&[ee]);
-//             *rb = RigidBody::Static;
-//             cmd.entity(pe).remove::<(LockedAxes, Friction, LinearDamping, ExternalForce, Lift)>();            
-//         }
-//     }
-// }
-
-fn switch_lift(
-    tr: Trigger<MakeLift>,
-    mut lift_q: Query<Entity, With<Lift>>,
-    effect_q: Single<(Entity, &mut EffectSpawner), With<LiftEffect>>,
-    mut cmd: Commands
-) {
-    let (ee, mut es)  = effect_q.into_inner();
-    let p_entity = tr.event().0;
-    let mut switch_off = false;
-
-    for l_e  in lift_q.iter_mut() {
-        if l_e == p_entity {
-            switch_off = true
-        }
-        cmd.entity(l_e).remove_children(&[ee]);
-        cmd.entity(l_e)
-        .insert(RigidBody::Static)
-        .remove::<(LockedAxes, Friction, LinearDamping, ExternalForce, Lift)>();            
-    }
-
-    if !switch_off {
-        es.active = true;
-        cmd.entity(p_entity).insert((
-            RigidBody::Dynamic,
-            LockedAxes::ALL_LOCKED.unlock_translation_y(),
-            Friction::new(0.0).with_combine_rule(CoefficientCombine::Min),
-            LinearDamping(2.),
-            ExternalForce::new(Vec3::Y * FORCE_UP).with_persistence(true),
-            Lift 
-        )).add_child(ee);
-
-    } else {
-        es.active = false;
-    }
-    
-}
-
 
 // ---
 
@@ -126,7 +61,7 @@ fn prepare_effect(
 ) {
         cmd.spawn((
         Name::new("circle"),
-        ParticleEffect::new(effects.add(green_steam())),
+        ParticleEffect::new(effects.add(steam())),
         Transform::from_xyz(0., -0.5, 0.),
         EffectProperties::default(),
         EffectMaterial{
@@ -136,5 +71,61 @@ fn prepare_effect(
         },
         LiftEffect
     ));        
+}
 
+// ---
+
+fn switch_lift(
+    mut lift_q: Query<Entity, With<Lift>>,
+    effect_q: Single<(Entity, &mut EffectSpawner), With<LiftEffect>>,
+    player_q: Single<&Transform, With<Player>>,
+    spatiaal: SpatialQuery,
+    mut cmd: Commands
+) {
+
+    let player_t = player_q.into_inner();
+    let (ee, mut es)  = effect_q.into_inner();
+    let  Some(RayHitData { entity: platform_e, distance: _, normal: _}) = get_platform(player_t, &spatiaal) else {
+        return;
+    };
+    
+    let mut switch_off = false;
+
+    for l_e  in lift_q.iter_mut() {
+        if l_e == platform_e {
+            switch_off = true
+        }
+        cmd.entity(l_e).remove_children(&[ee]);
+        cmd.entity(l_e)
+        .insert(RigidBody::Static)
+        .remove::<(LockedAxes, Friction, LinearDamping, ExternalForce, Lift)>();            
+    }
+
+    if !switch_off {
+        es.active = true;
+        cmd.entity(platform_e).insert((
+            RigidBody::Dynamic,
+            LockedAxes::ALL_LOCKED.unlock_translation_y(),
+            Friction::new(0.0).with_combine_rule(CoefficientCombine::Min),
+            LinearDamping(2.),
+            ExternalForce::new(Vec3::Y * FORCE_UP).with_persistence(true),
+            Lift 
+        )).add_child(ee);
+
+    } else {
+        es.active = false;
+    }
+    
+}
+
+
+fn set_help(
+    mut cmd: Commands
+) {
+    cmd.trigger(SetHelpData{
+        title: "Lift", 
+        keys: "L (On / Off), Num + (Up), Num - (Down)",
+        hint: "use the lift to go up or down"
+    });
+    cmd.trigger(SetMonologueText("Lift is available, check out the help"));
 }

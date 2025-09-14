@@ -3,7 +3,10 @@ use bevy::{
 };
 use avian3d::{math::Quaternion, prelude::*};
 
-use crate::shared::{Build, BuildAction, Exit, GameStage, PLATFORM_DIM};
+use crate::{
+    help::SetHelpData,
+    shared::{CastBuild, Exit, GameStage, Player, PLATFORM_DIM, get_platform, SetMonologueText}
+};
 
 pub struct PlatformPlugin;
 impl Plugin for PlatformPlugin {
@@ -12,17 +15,20 @@ impl Plugin for PlatformPlugin {
         .add_plugins(MaterialPlugin::<PlatformMaterial>::default())
         .add_systems(Startup, startup)
         // .add_systems(Update, gismos)
-        .add_systems(OnEnter(GameStage::Two), change_stage)
-        .add_observer(build_single)
+        .add_systems(OnEnter(GameStage::Build), (change_color, set_help))
+        .add_systems(
+            Update, build_single.run_if(
+                not(in_state(GameStage::Intro))
+                .and(resource_changed::<ButtonInput<KeyCode>>)
+            )
+        )
         ;
     }
 }
 
 // ---
 
-
 pub const PITCH_ANGLE: f32 = 30.0_f32.to_radians();
-pub const YAW_ANGLE: f32 = 90.0_f32.to_radians();
 pub const GAP: f32 = 0.01;
 
 
@@ -52,7 +58,6 @@ pub struct Platform;
 #[derive(Resource)]
 pub struct PlatformMaterialHandle(Handle<PlatformMaterial>);
 
-
 // ---
 
 #[allow(dead_code)]
@@ -70,41 +75,6 @@ fn gismos(
 
 // ---
 
-enum PDir {
-    Left,
-    Right,
-    Up,
-    Down,
-    Forward,
-    Back,
-    BackUp,
-    BackDown,
-    LeftDown,
-    LeftUp,
-    RightDown,
-    RightUp,
-}
-impl PDir {
-    fn get_rotation(r: &PDir ) -> Quat {
-        match r {
-            Self::Left => Quat::from_rotation_y(YAW_ANGLE),
-            Self::Right => Quat::from_rotation_y(-YAW_ANGLE),
-            Self::Up => Quat::from_rotation_x(PITCH_ANGLE),
-            Self::Down => Quat::from_rotation_x(-PITCH_ANGLE),
-            Self::Forward => Quat::IDENTITY,
-            Self::Back =>  Quat::from_rotation_y(2. * YAW_ANGLE),
-            Self::BackUp =>  Quat::from_rotation_y(2. * YAW_ANGLE) * Quat::from_rotation_x(PITCH_ANGLE),
-            Self::BackDown =>  Quat::from_rotation_y(2. * YAW_ANGLE) * Quat::from_rotation_x(-PITCH_ANGLE),
-            Self::LeftDown => Quat::from_rotation_y(YAW_ANGLE) * Quat::from_rotation_x(-PITCH_ANGLE),
-            Self::LeftUp => Quat::from_rotation_y(YAW_ANGLE) * Quat::from_rotation_x(PITCH_ANGLE),
-            Self::RightDown => Quat::from_rotation_y(-YAW_ANGLE) * Quat::from_rotation_x(-PITCH_ANGLE),
-            Self::RightUp => Quat::from_rotation_y(-YAW_ANGLE) * Quat::from_rotation_x(PITCH_ANGLE),
-        }
-    }
-}
-
-// ---
-
 fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -115,99 +85,80 @@ fn startup(
     let mesh = meshes.add(Cuboid::from_size(PLATFORM_DIM));
     let material = materials.add(PlatformMaterial {
         color: Color::srgba (0., 0., 1., 0.1).into(), 
-        stage_index:GameStage::get_index(&stage) 
+        stage_index:GameStage::get_index_by_state(&stage) 
     }); 
     cmd.insert_resource(PlatformMaterialHandle(material.clone()));
-    
-    let rotations = vec![
-        PDir::Forward,
-        PDir::Forward,
-        PDir::Forward,
-        PDir::Forward,
-        PDir::Forward,
-        PDir::Forward,
-        PDir::Forward,
-        PDir::Forward,
-        PDir::Forward,
-        PDir::Forward,        
-    ];
 
-    let mut pos = Vec3::ZERO;
-    let mut trans = Transform::IDENTITY;
-
-    for (idx, rs) in  rotations.iter().enumerate() {
-        if idx > 0 {
-            let dir =  match *rs {
-                PDir::Right |  PDir::RightDown | PDir::RightUp => trans.right(),
-                PDir::Left | PDir::LeftDown | PDir::LeftUp => trans.left(),
-                _ => trans.forward()
-            };
-
-            let (step, shift) = if ![trans.forward(), trans.back()].contains(&dir) {
-                (PLATFORM_DIM.x, trans.forward() * 0.5 * (PLATFORM_DIM.z - PLATFORM_DIM.x))
-            } else {
-                (PLATFORM_DIM.z, Vec3::ZERO)
-            };
-
-            let connect_point = trans.translation + dir * step * 0.5 + shift;    
-            trans.rotate_local(PDir::get_rotation(rs));
-            pos = connect_point + trans.rotation.mul_vec3(-Vec3::Z * PLATFORM_DIM.z * (0.5 + GAP));
-        }
-
-        trans = Transform::from_translation(pos).with_rotation(trans.rotation);
-        cmd.spawn((
-            trans,
-            Mesh3d(mesh.clone()),
-            MeshMaterial3d(material.clone()),
-            Collider::cuboid(PLATFORM_DIM.x, PLATFORM_DIM.y, PLATFORM_DIM.z),
-            RigidBody::Static,
-            Platform,
-            Name::new("Platform")
-        ));
-    }
-
-
+    cmd.spawn((
+        Mesh3d(mesh.clone()),
+        MeshMaterial3d(material.clone()),
+        Collider::cuboid(PLATFORM_DIM.x, PLATFORM_DIM.y, PLATFORM_DIM.z),
+        RigidBody::Static,
+        Platform,
+        Name::new("Platform")
+    ));
 }
 
 // ---
 
 fn build_single(
-    tr: Trigger<Build>,
+    player_q: Single<(Entity, &Transform), With<Player>>,
     mut cmd: Commands,
-    pt_q: Query<&Transform>,
     spatial: SpatialQuery,
+    keys: Res<ButtonInput<KeyCode>>,
+    trans_q: Query<&Transform, Without<Player>>
 ) {
-    let Build(act, p_e, d) = tr.event();
-    let Ok(pt) = pt_q.get (*p_e) else {
+    if !(keys.any_pressed([KeyCode::AltLeft, KeyCode::AltRight]) && keys.any_just_pressed([KeyCode::KeyQ, KeyCode::KeyA, KeyCode::KeyZ, KeyCode::KeyX])) {
+        return;
+    }
+    
+    let  (player_e, player_t) = player_q.into_inner();
+    let Some(RayHitData { entity: platform_e, distance: _ , normal: _ }) = get_platform(player_t, &spatial) else {
         return;
     };
-    let Some(face_to) = [pt.forward(), pt.back(), pt.right(), pt.left()]
+
+    let Ok(platform_t) = trans_q.get(platform_e) else {
+        return;
+    };
+
+    let Some(face_to) = [platform_t.forward(), platform_t.back(), platform_t.right(), platform_t.left()]
     .into_iter().max_by(|a, b| {
-        d.dot(**a).total_cmp(&d.dot(**b))
+        player_t.forward().dot(**a).total_cmp(&player_t.forward().dot(**b))
     }) else {
         return;
     };
-   
-    let add = Quat::from_rotation_arc(*pt.forward(), *face_to).normalize();
 
-    let rotation = pt.rotation * add *  match act {
-        BuildAction::Up => PDir::get_rotation(&PDir::Up),
-        BuildAction::Down => PDir::get_rotation(&PDir::Down),
-        BuildAction::Forward | BuildAction::Delete => PDir::get_rotation(&PDir::Forward)
+    let add = Quat::from_rotation_arc(*platform_t.forward(), *face_to).normalize();
+
+    let rotation = platform_t.rotation * add * match keys.get_just_pressed().next() {
+        Some(KeyCode::KeyQ) => Quat::from_rotation_x(PITCH_ANGLE),
+        Some(KeyCode::KeyZ) => Quat::from_rotation_x(-PITCH_ANGLE),  
+        Some(KeyCode::KeyA) | Some(KeyCode::KeyX) => Quat::IDENTITY,
+        _ => Quat::IDENTITY  
     };
 
-    let (step, shift) = if ![pt.forward(), pt.back()].contains(&face_to) {
-        (PLATFORM_DIM.x, pt.forward() * 0.5 * (PLATFORM_DIM.z - PLATFORM_DIM.x))
+    let (step, shift) = if ![platform_t.forward(), platform_t.back()].contains(&face_to) {
+        (PLATFORM_DIM.x, platform_t.forward() * 0.5 * (PLATFORM_DIM.z - PLATFORM_DIM.x))
     } else {
         (PLATFORM_DIM.z, Vec3::ZERO)
     };
 
-    let connect_point = pt.translation + *face_to * step * 0.5 + shift;
+    let connect_point = platform_t.translation + *face_to * step * 0.5 + shift;
     let pos = connect_point +  rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * (0.5 + GAP));
 
-    // println!("{:?}  {}  {}", *face_to, connect_point, pos);
-    if *act != BuildAction::Delete {
-        cmd.entity(*p_e)
+
+    let intersect: Vec<_> = spatial.shape_intersections(&Collider::sphere(0.5), connect_point, Quaternion::IDENTITY, &SpatialQueryFilter::default())
+        .into_iter()
+        .filter(| e | ![platform_e, player_e].contains(e))
+        .collect();
+
+
+
+    if !keys.just_pressed(KeyCode::KeyX) {
+        if intersect.len() != 0 {
+            return;
+        }
+        cmd.entity(platform_e)
         .clone_and_spawn_with(|b| {
             b.deny::<VisibilityClass>();
         })
@@ -217,17 +168,15 @@ fn build_single(
         ))
         ;
     } else {
-        spatial.shape_intersections(&Collider::sphere(0.5), connect_point, Quaternion::IDENTITY, &SpatialQueryFilter::default())
-        .iter()
-        .filter(| e | **e != *p_e)
-        .for_each(|e| cmd.entity(*e).despawn());
+        intersect.iter().for_each(|e| cmd.entity(*e).despawn());
     }
+    cmd.trigger(CastBuild);
 
 }
 
 // ---
 
-fn change_stage(
+fn change_color(
     mh: Res<PlatformMaterialHandle>,
     mut materials: ResMut<Assets<PlatformMaterial>>
 ) {
@@ -236,3 +185,17 @@ fn change_stage(
     };
     m.stage_index = 1;
 }
+
+// ---
+
+fn set_help(
+    mut cmd: Commands
+) {
+    cmd.trigger(SetHelpData{
+        title: "Platform Builder", 
+        keys: "Alt + Q (Up), Alt + A (Forward), Alt + Z (Dowm), Alt + X (Delete)",
+        hint: "Turn in the desired direction and build a platform"
+    });
+    cmd.trigger(SetMonologueText("Platform Builder is available, check out the help"));
+}
+

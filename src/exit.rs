@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use bevy::{
-    math::VectorSpace, prelude::*, render::render_resource::{AsBindGroup, ShaderRef}, scene::SceneInstanceReady
+   prelude::*, render::render_resource::{AsBindGroup, ShaderRef}, 
 };
 
 
@@ -12,6 +12,7 @@ impl Plugin for ExitPlugin {
         app
         .add_plugins(MaterialPlugin::<ExitMaterial>::default())
         .add_systems(Startup, start)
+        .add_systems(OnExit(GameStage::Intro), change_shader)
         .add_observer(on_collide)
         ;  
     }
@@ -38,6 +39,13 @@ impl Material for ExitMaterial {
     }
 }
 
+// ---
+
+#[derive(Resource)]
+pub struct ExitMaterialHandle(Handle<ExitMaterial>);
+
+
+// ---
 
 fn start(
     mut cmd : Commands,
@@ -45,11 +53,13 @@ fn start(
     mut meshes: ResMut<Assets<Mesh>>,
     stage: Res<State<GameStage>>
 ) {
+    let emh = materials.add(ExitMaterial {stage_index: GameStage::get_index_by_state(&stage)});
+    cmd.insert_resource(ExitMaterialHandle(emh.clone()));
     cmd.spawn((
         Exit,
         Mesh3d(meshes.add(Cuboid::from_length(4.))),
-        MeshMaterial3d(materials.add(ExitMaterial {stage_index: GameStage::get_index(&stage)})),
-        Transform::from_translation(Vec3::new(0., 3., -85.)),
+        MeshMaterial3d(emh.clone()),
+        Transform::from_translation(Vec3::new(0., 3., -3.)),
         RigidBody::Kinematic,
         Collider::cuboid(4., 4., 4.),
         CollisionEventsEnabled,
@@ -57,52 +67,6 @@ fn start(
     ));
 
 }
-
-
-
-
-// fn start(
-//     mut cmd : Commands,
-//     assets: ResMut<AssetServer> 
-// ) {
-//     cmd.spawn((
-//         SceneRoot(assets.load(GltfAssetLabel::Scene(0).from_asset("models/exit.glb"))),
-//         Transform::from_xyz(0., 0., -100.2).looking_to(Dir3::Z, Vec3::Y),
-//         RigidBody::Static,
-//         ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
-//         Name::new("Exit"),
-//     ))
-//     .observe(on_ready)
-//     ;
-// }
-
-// fn on_ready(
-//     tr: Trigger<SceneInstanceReady>,
-//     trans_q: Query<&Transform>,
-//     mut cmd : Commands,
-//     mut materials: ResMut<Assets<ExitMaterial>>,
-//     mut meshes: ResMut<Assets<Mesh>>,
-//     stage: Res<State<GameStage>>
-// ) {
-
-//     let Ok(trans) = trans_q.get(tr.target()) else {
-//         return;
-//     };
-
-//     cmd.spawn((
-//         Exit,
-//         // Mesh3d(meshes.add(Plane3d::new(Vec3::Z, Vec2::splat(4.)))),
-//         Mesh3d(meshes.add(Cuboid::from_length(4.))),
-//         MeshMaterial3d(materials.add(ExitMaterial {stage_index: GameStage::get_index(&stage)})),
-//         Transform::from_translation(trans.translation + Vec3::Y * 3.5),
-//         RigidBody::Kinematic,
-//         Collider::cuboid(4., 4., 0.1),
-//         CollisionEventsEnabled,
-//         Sensor
-//     ));
-
-
-// }
 
 // ---
 
@@ -114,16 +78,27 @@ fn vec_rnd(rx: Range<i32>, ry: Range<i32>, rz: Range<i32>) -> Vec3{
     )
 }
 
-
 // ---
 
 fn on_collide(
     _tr: Trigger<OnCollisionStart>,
     mut next: ResMut<NextState<GameStage>>,
-    tr_q: Single<&mut Transform, With<Exit>>
+    tr_q: Single<&mut Transform, With<Exit>>,
+    mut stage_index: Local<usize>
 ) {
-    next.set(GameStage::Two);
+    *stage_index += 1; 
+    next.set(GameStage::get_state_by_index(*stage_index));
     let mut t = tr_q.into_inner();
-    t.translation = vec_rnd(-100 .. 100, 0 .. 100, -100 .. 100);
+    t.translation = vec_rnd(-50 .. 50, 0 .. 50, -50 .. 50);
+}
 
+
+fn change_shader(
+    mh: Res<ExitMaterialHandle>,
+    mut materials: ResMut<Assets<ExitMaterial>>
+) {
+    let Some(m) = materials.get_mut(&mh.0) else {
+        return;
+    };
+    m.stage_index = 1;
 }

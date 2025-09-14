@@ -1,7 +1,7 @@
 use bevy::{math::VectorSpace, prelude::*};
 use bevy_hanabi::prelude::*;
 
-pub fn green_steam() -> EffectAsset{
+pub fn steam() -> EffectAsset{
     let writer = ExprWriter::new();
     let init_pos = SetAttributeModifier::new(
         Attribute::POSITION, 

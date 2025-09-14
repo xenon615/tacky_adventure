@@ -161,7 +161,7 @@ fn switch_state(
     state: Res<State<GameStage>>
 ) {
 
-    if *state == GameStage::Two {
+    if *state != GameStage::Intro {
 
         let cam_e = cam_q.into_inner();
         cmd.entity(cam_e).insert((
