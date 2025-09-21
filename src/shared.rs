@@ -18,11 +18,13 @@ pub struct SetMonologueText<'a>(pub &'a str);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 pub enum GameStage {
-    #[default]
+    #[default]            
     Intro,
     Build,
     Lift,
-    Aimer
+    Aimer,
+    Eye,
+    Virus
 }
 
 impl GameStage {
@@ -31,7 +33,9 @@ impl GameStage {
             Self::Intro => 0,
             Self::Build => 1,
             Self::Lift => 2,
-            Self::Aimer => 3
+            Self::Aimer => 3,
+            Self::Eye => 4,
+            Self::Virus => 5
         }
     }
 
@@ -41,6 +45,8 @@ impl GameStage {
             1 => Self::Build,
             2 => Self::Lift,
             3 => Self::Aimer,
+            4 => Self::Eye,
+            5 => Self::Virus,
             _ => Self::Intro
         }
 
@@ -63,4 +69,37 @@ pub fn get_platform(pt: &Transform, raycast_q: &SpatialQuery) -> Option<RayHitDa
         false, 
         &SpatialQueryFilter::default()
     )
+}
+
+// ---
+
+pub fn fibonacci_sphere(count: usize) -> impl Iterator<Item = Vec3> {
+    let phi = std::f32::consts::PI * (5.0_f32.sqrt() - 1.);
+    (0 .. count).map(move |i| {
+        let y = 1. - (i as f32 / (count - 1) as f32) * 2.;  
+        let radius = (1. - y * y).sqrt();
+        let theta = phi * i as f32;
+        let x = theta.cos() * radius;
+        let z = theta.sin() * radius;
+        Vec3::new(x, y, z)
+    })
+} 
+
+// ---
+
+pub fn closest (verticis: &mut Vec<[f32; 3]>, p: Vec3, scale: f32 ) {
+    if let Some(i) = verticis
+        .iter()
+        .enumerate()
+        .map(|(idx, c)| (idx, Vec3::from_array(*c)))
+        .min_by(| (_, a), (_, b) | {
+            let ad = a.distance_squared(p);
+            let bd = b.distance_squared(p);
+            ad.total_cmp(&bd)
+        }) 
+        .map(|(idx, _)| idx) {
+        verticis[i].iter_mut().for_each(|c| {
+            *c *= scale;
+        });                
+    }
 }

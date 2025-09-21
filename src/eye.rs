@@ -4,9 +4,7 @@ use bevy::{
     render::render_resource::{AsBindGroup, ShaderRef}
 };
 
-use crate::{
-    shared::{PLATFORM_DIM, Player}
-};
+use crate::shared::{GameStage, Player, PLATFORM_DIM, SetMonologueText};
 
 // ---
 
@@ -15,12 +13,13 @@ impl Plugin for EyesPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_plugins(MaterialPlugin::<EyeMaterial>::default())
-        .add_systems(Startup, startup)
+        // .add_systems(Startup, startup)
+        .add_systems(OnEnter(GameStage::Eye), (startup, set_help))
         .add_systems(Update, (
             moving, 
             change_mode, 
             change_color
-        )) 
+        ).run_if(resource_exists::<EnabledEyes>)) 
         .add_systems(Update, check_blink.run_if(any_with_component::<Blinking>))
         ;
     }
@@ -76,6 +75,10 @@ pub struct Spot;
 #[derive(Component)]
 pub struct Blinking(Timer);
 
+#[derive(Resource)]
+pub struct EnabledEyes;
+
+
 // ---
 
 fn startup(
@@ -123,6 +126,8 @@ fn startup(
         ));
                
     }
+    cmd.insert_resource(EnabledEyes);
+
 }
 
 // ---
@@ -277,4 +282,12 @@ fn check_blink(
             m.blink = 0;        
         }
     }
+}
+
+// ---
+
+fn set_help(
+    mut cmd: Commands
+) {
+    cmd.trigger(SetMonologueText("What the hell is this? Are these guys going to attack me or help me? I don't know yet."));
 }

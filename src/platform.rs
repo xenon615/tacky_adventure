@@ -1,5 +1,8 @@
 use bevy::{
-    gizmos,  pbr::Material, prelude::*, render::{render_resource::{AsBindGroup, ShaderRef}, view::VisibilityClass}
+    ecs::world, gizmos, pbr::Material, prelude::*, render::{
+        render_resource::{AsBindGroup, ShaderRef}, 
+        view::VisibilityClass
+    }
 };
 use avian3d::{math::Quaternion, prelude::*};
 
@@ -15,7 +18,9 @@ impl Plugin for PlatformPlugin {
         .add_plugins(MaterialPlugin::<PlatformMaterial>::default())
         .add_systems(Startup, startup)
         // .add_systems(Update, gismos)
-        .add_systems(OnEnter(GameStage::Build), (change_color, set_help))
+        .add_systems(OnEnter(GameStage::Build), (change_color, set_help).chain())
+        // .add_systems(OnEnter(GameStage::Build), startup)
+        // .add_systems(Update, (change_color, set_help).run_if(resource_added::<PlatformMaterialHandle>))
         .add_systems(
             Update, build_single.run_if(
                 not(in_state(GameStage::Intro))
@@ -101,6 +106,17 @@ fn startup(
 
 // ---
 
+#[derive(PartialEq)]
+enum BuildAction {
+    Up,
+    Forward,
+    Down,
+    Delete,
+    None
+}
+
+// ---
+
 fn build_single(
     player_q: Single<(Entity, &Transform), With<Player>>,
     mut cmd: Commands,
@@ -112,28 +128,52 @@ fn build_single(
         return;
     }
     
-    let  (player_e, player_t) = player_q.into_inner();
+    let  (_player_e, player_t) = player_q.into_inner();
     let Some(RayHitData { entity: platform_e, distance: _ , normal: _ }) = get_platform(player_t, &spatial) else {
         return;
     };
 
+    let build_action  =  match keys.get_just_pressed().next() {
+        Some(KeyCode::KeyQ) => BuildAction::Up,
+        Some(KeyCode::KeyZ) => BuildAction::Down,  
+        Some(KeyCode::KeyA) => BuildAction::Forward,
+        Some(KeyCode::KeyX) => BuildAction::Delete,
+        _ => BuildAction::None  
+    };
+
+    let _le = build_platform(&mut cmd, &spatial, platform_e, player_t.forward(), build_action, trans_q);
+   
+    cmd.trigger(CastBuild);
+}
+
+
+// ---
+
+fn build_platform(
+    cmd: &mut Commands,
+    spatial: &SpatialQuery,
+    platform_e: Entity, 
+    build_dir: Dir3,
+    build_action: BuildAction,
+    trans_q: Query<&Transform, Without<Player>>
+) {
     let Ok(platform_t) = trans_q.get(platform_e) else {
         return;
     };
 
     let Some(face_to) = [platform_t.forward(), platform_t.back(), platform_t.right(), platform_t.left()]
     .into_iter().max_by(|a, b| {
-        player_t.forward().dot(**a).total_cmp(&player_t.forward().dot(**b))
+        build_dir.dot(**a).total_cmp(&build_dir.dot(**b))
     }) else {
         return;
     };
 
     let add = Quat::from_rotation_arc(*platform_t.forward(), *face_to).normalize();
 
-    let rotation = platform_t.rotation * add * match keys.get_just_pressed().next() {
-        Some(KeyCode::KeyQ) => Quat::from_rotation_x(PITCH_ANGLE),
-        Some(KeyCode::KeyZ) => Quat::from_rotation_x(-PITCH_ANGLE),  
-        Some(KeyCode::KeyA) | Some(KeyCode::KeyX) => Quat::IDENTITY,
+    let rotation = platform_t.rotation * add * match build_action {
+        BuildAction::Up => Quat::from_rotation_x(PITCH_ANGLE),
+        BuildAction::Down => Quat::from_rotation_x(-PITCH_ANGLE),  
+        BuildAction::Forward | BuildAction::Delete => Quat::IDENTITY,
         _ => Quat::IDENTITY  
     };
 
@@ -144,17 +184,13 @@ fn build_single(
     };
 
     let connect_point = platform_t.translation + *face_to * step * 0.5 + shift;
-    let pos = connect_point +  rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * (0.5 + GAP));
-
-
+    let pos = connect_point + rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * (0.5 + GAP));
     let intersect: Vec<_> = spatial.shape_intersections(&Collider::sphere(0.5), connect_point, Quaternion::IDENTITY, &SpatialQueryFilter::default())
         .into_iter()
-        .filter(| e | ![platform_e, player_e].contains(e))
+        .filter(| e | ![platform_e].contains(e))
         .collect();
 
-
-
-    if !keys.just_pressed(KeyCode::KeyX) {
+    if build_action != BuildAction::Delete{
         if intersect.len() != 0 {
             return;
         }
@@ -170,7 +206,6 @@ fn build_single(
     } else {
         intersect.iter().for_each(|e| cmd.entity(*e).despawn());
     }
-    cmd.trigger(CastBuild);
 
 }
 
@@ -178,6 +213,7 @@ fn build_single(
 
 fn change_color(
     mh: Res<PlatformMaterialHandle>,
+    // mh_q: Single<&MeshMaterial3d<PlatformMaterial>>,
     mut materials: ResMut<Assets<PlatformMaterial>>
 ) {
     let Some(m) = materials.get_mut(&mh.0) else {

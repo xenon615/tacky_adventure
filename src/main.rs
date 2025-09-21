@@ -16,7 +16,7 @@ use crate::shared::GameStage;
 mod shared;
 mod camera;
 mod env;
-mod eyes;
+mod eye;
 mod player;
 // mod city;
 mod platform;
@@ -27,6 +27,7 @@ mod exit;
 mod monologue;
 mod help;
 mod aimer;
+mod virus;
 
 fn main() {
     let mut app = App::new();
@@ -39,7 +40,7 @@ fn main() {
         HanabiPlugin,
         camera::CameraPlugin,
         env::EnvPlugin,
-        // eyes::EyesPlugin,
+        eye::EyesPlugin,
         player::PlayerPlugin,
         platform::PlatformPlugin,
         lift::LiftPlugin,
@@ -47,7 +48,8 @@ fn main() {
         exit::ExitPlugin,
         monologue::MonologuePlugin,
         help:: HelpPlugin,
-        aimer::AimerPlugin
+        aimer::AimerPlugin,
+        virus::VirusPlugin
     ))
     // .add_plugins(EguiPlugin::default() )
     // .add_plugins(WorldInspectorPlugin::new())

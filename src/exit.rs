@@ -87,11 +87,19 @@ fn on_collide(
     mut stage_index: Local<usize>
 ) {
     *stage_index += 1; 
+    println!("------stage index----- {}", *stage_index);
     next.set(GameStage::get_state_by_index(*stage_index));
     let mut t = tr_q.into_inner();
-    t.translation = vec_rnd(-50 .. 50, 0 .. 50, -50 .. 50);
+    let mut max = 20;
+
+    if *stage_index > 2 {
+        max *= 5;
+    }
+
+    t.translation = vec_rnd(-max .. max, 0 .. max, -max .. max);
 }
 
+// ---
 
 fn change_shader(
     mh: Res<ExitMaterialHandle>,

@@ -25,6 +25,8 @@ fastrand = "2.3.0"
 
 [dependencies.bevy]
 version = "0.16.1"
+# git = "https://github.com/bevyengine/bevy.git"
+# tag = "v0.17.0-rc.1"
 default-features = false
 features = [
     "dynamic_linking",
@@ -63,7 +65,7 @@ features = [
     # "vorbis",
     # "webgl2",
     # "x11",
-    # "zstd",
+    # "zstd_rust",
     "std",
     # "async_executor"
 ]
