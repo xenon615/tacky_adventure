@@ -232,6 +232,6 @@ fn set_help(
         keys: "Alt + Q (Up), Alt + A (Forward), Alt + Z (Dowm), Alt + X (Delete)",
         hint: "Turn in the desired direction and build a platform"
     });
-    cmd.trigger(SetMonologueText("Platform Builder is available, check out the help"));
+    cmd.trigger(SetMonologueText::new("Platform Builder is available, check out the help"));
 }
 

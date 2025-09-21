@@ -85,7 +85,7 @@ fn on_ready (
     _: Trigger<SceneInstanceReady>,
     mut cmd: Commands
 ) {
-    cmd.trigger(SetMonologueText("Hi"));
+    cmd.trigger(SetMonologueText::new("Hi").with_time(20));
 }
 
 // ---

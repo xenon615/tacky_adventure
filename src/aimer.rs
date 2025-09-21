@@ -62,7 +62,7 @@ fn set_help(
         keys: "",
         hint: "the aimer indicates the direction to the target"
     });
-    cmd.trigger(SetMonologueText("Aimer is available, check out the help"));
+    cmd.trigger(SetMonologueText::new("Aimer is available, check out the help"));
 }
 
 // ---

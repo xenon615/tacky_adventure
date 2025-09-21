@@ -127,5 +127,5 @@ fn set_help(
         keys: "L (On / Off), Num + (Up), Num - (Down)",
         hint: "use the lift to go up or down"
     });
-    cmd.trigger(SetMonologueText("Lift is available, check out the help"));
+    cmd.trigger(SetMonologueText::new("Lift is available, check out the help"));
 }

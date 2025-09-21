@@ -33,7 +33,6 @@ impl Plugin for MonologuePlugin {
 #[derive(Component)]
 pub struct Ballon;
 
-
 #[derive(Component)]
 pub struct HideTime(Timer);
 
@@ -70,9 +69,9 @@ fn startup(
 
 
 
-    let Ok(content) = fs::read_to_string("monologue/script.txt") else {
-        return;
-    };
+    // let Ok(content) = fs::read_to_string("monologue/script.txt") else {
+    //     return;
+    // };
 
 
 }
@@ -91,8 +90,8 @@ fn set_text(
     };
     *vis = Visibility::Visible;
 
-    text.0 = tr.event().0.to_string();
-    cmd.entity(e).insert(HideTime(Timer::new(Duration::from_secs(5), TimerMode::Once)));
+    text.0 = tr.event().text.to_string();
+    cmd.entity(e).insert(HideTime(Timer::new(Duration::from_secs(tr.event().time), TimerMode::Once)));
 }
 
 // ---

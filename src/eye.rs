@@ -289,5 +289,5 @@ fn check_blink(
 fn set_help(
     mut cmd: Commands
 ) {
-    cmd.trigger(SetMonologueText("What the hell is this? Are these guys going to attack me or help me? I don't know yet."));
+    cmd.trigger(SetMonologueText::new("What the hell is this? Are these guys going to attack me or help me? I don't know yet."));
 }

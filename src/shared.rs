@@ -14,7 +14,18 @@ pub struct Player;
 
 #[derive(Event)]
 
-pub struct SetMonologueText<'a>(pub &'a str);
+// pub struct SetMonologueText<'a>(pub &'a str, u32);
+pub struct SetMonologueText<'a>{pub text: &'a str, pub time: u64}
+impl <'a>SetMonologueText<'a>  {
+    pub fn new(text: &'a str) -> Self {
+        Self { text , time: 5 }
+    }
+
+    pub fn with_time(mut self, time: u64) -> Self {
+        self.time = time;
+        self
+    }
+}
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
 pub enum GameStage {
