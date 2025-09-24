@@ -36,7 +36,6 @@ fn main() {
     .add_plugins((
         DefaultPlugins,
         PhysicsPlugins::default(),
-        // PhysicsDebugPlugin::default(),
         HanabiPlugin,
         camera::CameraPlugin,
         env::EnvPlugin,
@@ -51,6 +50,10 @@ fn main() {
         aimer::AimerPlugin,
         virus::VirusPlugin
     ))
+    // .add_plugins((
+        
+    //     PhysicsDebugPlugin::default(),
+    // ))
     // .add_plugins(EguiPlugin::default() )
     // .add_plugins(WorldInspectorPlugin::new())
     .init_state::<GameStage>()

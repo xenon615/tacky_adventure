@@ -106,7 +106,7 @@ fn startup(
 
 // ---
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 enum BuildAction {
     Up,
     Forward,
@@ -140,7 +140,10 @@ fn build_single(
         Some(KeyCode::KeyX) => BuildAction::Delete,
         _ => BuildAction::None  
     };
-
+    if build_action == BuildAction::None {
+        return;
+    }
+    println!("B - Action {:?}", build_action);
     let _le = build_platform(&mut cmd, &spatial, platform_e, player_t.forward(), build_action, trans_q);
    
     cmd.trigger(CastBuild);
@@ -158,6 +161,7 @@ fn build_platform(
     trans_q: Query<&Transform, Without<Player>>
 ) {
     let Ok(platform_t) = trans_q.get(platform_e) else {
+        warn!("No platform");
         return;
     };
 
@@ -165,6 +169,7 @@ fn build_platform(
     .into_iter().max_by(|a, b| {
         build_dir.dot(**a).total_cmp(&build_dir.dot(**b))
     }) else {
+        warn!("No face");
         return;
     };
 
@@ -192,6 +197,7 @@ fn build_platform(
 
     if build_action != BuildAction::Delete{
         if intersect.len() != 0 {
+            warn!("No intersect");
             return;
         }
         cmd.entity(platform_e)

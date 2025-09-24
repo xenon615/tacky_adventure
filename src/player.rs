@@ -6,16 +6,16 @@ use bevy::{
     // pbr:: {NotShadowCaster, NotShadowReceiver}, 
     color::palettes::basic, ecs::system::entity_command::observe, input::{keyboard::KeyboardInput, mouse::MouseMotion}, prelude::*, scene::SceneInstanceReady
 };
-use bevy_tnua::{prelude::*, TnuaAnimatingState};
-use bevy_tnua_avian3d::*;
+use bevy_tnua::prelude::*;
+use bevy_tnua_avian3d::{
+    *,
+    TnuaAvian3dPlugin
+};
 
-use bevy_tnua_avian3d::TnuaAvian3dPlugin;
+// use bevy_tnua_avian3d::TnuaAvian3dPlugin;
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
-
-// use crate::shared::{SetMonologueText};
-// use crate::shared::{MakeLift, Player};
-use crate::shared:: {Player, CastBuild,  SetMonologueText};
+use crate::shared:: {CastBuild, MaxHealth, Damage ,Player, SetDamage, SetMonologueText};
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
@@ -34,11 +34,15 @@ impl Plugin for PlayerPlugin {
         ).in_set(TnuaUserControlsSystemSet))
         .add_systems(Update, timer.run_if(any_with_component::<Interval>))
         .add_observer(build_action)
+        .add_observer(on_damage)
         ;
     }
 }
 
 // ---
+
+
+
 
 #[derive(Component)]
 pub struct Movement {
@@ -206,4 +210,20 @@ fn timer (
         cmd.entity(e).remove::<Interval>();
         ad.animation_index = 0;
     }
+}
+
+// ---
+
+fn on_damage(
+    tr: Trigger<SetDamage>,
+    player_q: Single<(&mut Damage, &MaxHealth)>, 
+    mut cmd: Commands
+) {
+    let (mut damage, max_health) = player_q.into_inner();
+    cmd.trigger(SetMonologueText::new("Ouch!!"));
+    damage.0 += tr.event().0;
+    if max_health.0 - damage.0 <= 0. {
+        info!("Game Over");
+    } 
+
 }

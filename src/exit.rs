@@ -1,4 +1,4 @@
-use std::ops::Range;
+
 
 use bevy::{
    prelude::*, render::render_resource::{AsBindGroup, ShaderRef}, 
@@ -13,12 +13,11 @@ impl Plugin for ExitPlugin {
         .add_plugins(MaterialPlugin::<ExitMaterial>::default())
         .add_systems(Startup, start)
         .add_systems(OnExit(GameStage::Intro), change_shader)
-        .add_observer(on_collide)
         ;  
     }
 }
 
-use crate::shared::{Exit, GameStage};
+use crate::shared::{Exit, GameStage, vec_rnd};
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
 pub struct ExitMaterial {
@@ -64,18 +63,10 @@ fn start(
         Collider::cuboid(4., 4., 4.),
         CollisionEventsEnabled,
         Sensor
-    ));
+    ))
+    .observe(on_collide)
+    ;
 
-}
-
-// ---
-
-fn vec_rnd(rx: Range<i32>, ry: Range<i32>, rz: Range<i32>) -> Vec3{
-    Vec3::new(
-        fastrand::i32(rx) as _ , 
-        fastrand::i32(ry) as _, 
-        fastrand::i32(rz) as _
-    )
 }
 
 // ---
@@ -84,16 +75,16 @@ fn on_collide(
     _tr: Trigger<OnCollisionStart>,
     mut next: ResMut<NextState<GameStage>>,
     tr_q: Single<&mut Transform, With<Exit>>,
-    mut stage_index: Local<usize>
+    state: Res<State<GameStage>>
 ) {
-    *stage_index += 1; 
-    println!("------stage index----- {}", *stage_index);
-    next.set(GameStage::get_state_by_index(*stage_index));
+    let stage_index = GameStage::get_index_by_state(&state) + 1;
+    println!("------stage index----- {}", stage_index);
+    next.set(GameStage::get_state_by_index(stage_index));
     let mut t = tr_q.into_inner();
     let mut max = 20;
 
-    if *stage_index > 2 {
-        max *= 5;
+    if stage_index > 2 {
+        max *= 2;
     }
 
     t.translation = vec_rnd(-max .. max, 0 .. max, -max .. max);

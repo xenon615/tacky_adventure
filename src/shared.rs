@@ -1,20 +1,37 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
-#[allow(dead_code)]
-pub fn color2vec4(c: Color) -> Vec4 {
-    let color = c.to_srgba();
-    Vec4::new(color.red, color.green, color.blue, color.alpha)
-}
+use std::ops::Range;
+
+// #[allow(dead_code)]
+// pub fn color2vec4(c: Color) -> Vec4 {
+//     let color = c.to_srgba();
+//     Vec4::new(color.red, color.green, color.blue, color.alpha)
+// }
 
 #[derive(Event)]
 pub struct CastBuild;
 
 #[derive(Component)]
+#[component(immutable)]
+pub struct MaxHealth(pub f32);
+impl Default for MaxHealth {
+    fn default() -> Self {
+        Self(100.)
+    }
+}
+#[derive(Component, Default)]
+pub struct Damage(pub f32);
+
+
+#[derive(Component)]
+#[require(MaxHealth, Damage)]
 pub struct Player;
 
 #[derive(Event)]
+pub struct SetDamage(pub f32);
 
-// pub struct SetMonologueText<'a>(pub &'a str, u32);
+
+#[derive(Event)]
 pub struct SetMonologueText<'a>{pub text: &'a str, pub time: u64}
 impl <'a>SetMonologueText<'a>  {
     pub fn new(text: &'a str) -> Self {
@@ -50,7 +67,7 @@ impl GameStage {
         }
     }
 
-    pub fn get_state_by_index(index: usize) -> GameStage{
+    pub fn get_state_by_index(index: u32) -> GameStage{
         match index {
             0 => Self::Intro,
             1 => Self::Build,
@@ -114,3 +131,13 @@ pub fn closest (verticis: &mut Vec<[f32; 3]>, p: Vec3, scale: f32 ) {
         });                
     }
 }
+
+pub fn vec_rnd(rx: Range<i32>, ry: Range<i32>, rz: Range<i32>) -> Vec3{
+    Vec3::new(
+        fastrand::i32(rx) as _ , 
+        fastrand::i32(ry) as _, 
+        fastrand::i32(rz) as _
+    )
+}
+
+// ---
