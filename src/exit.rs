@@ -13,6 +13,7 @@ impl Plugin for ExitPlugin {
         .add_plugins(MaterialPlugin::<ExitMaterial>::default())
         .add_systems(Startup, start)
         .add_systems(OnExit(GameStage::Intro), change_shader)
+        .add_systems(Update, move_exit.run_if(any_with_component::<MoveExit>))
         ;  
     }
 }
@@ -44,6 +45,9 @@ impl Material for ExitMaterial {
 pub struct ExitMaterialHandle(Handle<ExitMaterial>);
 
 
+#[derive(Component)]
+struct MoveExit(Vec3);
+
 // ---
 
 fn start(
@@ -66,28 +70,31 @@ fn start(
     ))
     .observe(on_collide)
     ;
-
 }
 
 // ---
 
 fn on_collide(
-    _tr: Trigger<OnCollisionStart>,
+    tr: Trigger<OnCollisionStart>,
     mut next: ResMut<NextState<GameStage>>,
-    tr_q: Single<&mut Transform, With<Exit>>,
-    state: Res<State<GameStage>>
+    // tr_q: Single<&mut Transform, With<Exit>>,
+    tr_q: Single<&mut AngularVelocity, With<Exit>>,
+    state: Res<State<GameStage>>,
+    mut cmd: Commands
 ) {
     let stage_index = GameStage::get_index_by_state(&state) + 1;
     println!("------stage index----- {}", stage_index);
     next.set(GameStage::get_state_by_index(stage_index));
-    let mut t = tr_q.into_inner();
+    // let mut t = tr_q.into_inner();
     let mut max = 20;
 
     if stage_index > 2 {
         max *= 2;
     }
-
-    t.translation = vec_rnd(-max .. max, 0 .. max, -max .. max);
+    
+    tr_q.into_inner().0 = Vec3::Y * 2.;
+    cmd.entity(tr.target()).insert(MoveExit(vec_rnd(-max .. max, 0 .. max, -max .. max)));
+    cmd.entity(tr.target()).remove::<Sensor>();
 }
 
 // ---
@@ -101,3 +108,24 @@ fn change_shader(
     };
     m.stage_index = 1;
 }
+
+// ---
+
+fn move_exit(
+    mut cmd : Commands,
+    tr_q: Single<(Entity, &mut Transform, &mut AngularVelocity, &MoveExit), With<Exit>>,  
+    time: Res<Time>
+) {
+    let (e, mut trans, mut av, me) =  tr_q.into_inner();
+    if trans.translation.distance_squared(me.0) < 0.2 {
+        cmd.entity(e).remove::<MoveExit>();
+        cmd.entity(e).insert(Sensor);
+        av.0 = Vec3::ZERO;
+    } else {
+        trans.translation = trans.translation.lerp(me.0, time.delta_secs() * 1.);
+    }
+
+}
+
+
+

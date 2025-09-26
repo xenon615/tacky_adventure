@@ -91,7 +91,7 @@ fn startup(
         Transform::from_xyz(1000., 0., 0.),
         Visibility::Hidden,
         Mesh3d(meshes.add(mesh)),
-        MeshMaterial3d(materials.add(Color::hsl(130., 1., 0.5))),
+        MeshMaterial3d(materials.add(Color::hsl(250., 1., 0.5))),
         RigidBody::Kinematic,
         ColliderConstructor::TrimeshFromMesh,
         AngularVelocity(Vec3::new(1., 1., 1.)),
@@ -111,7 +111,6 @@ fn startup(
 fn chase(
     player_q: Single<&Transform, (With<Player>, Without<Virus>)>,
     mut virus_q: Query<(&Transform, &mut LinearVelocity), (With<Virus>, Without<Player>)>,
-    // mut gi: Gizmos
 ) {
     let player_t = player_q.into_inner();
     for (vt, mut vv) in &mut virus_q  {
@@ -120,8 +119,6 @@ fn chase(
         if d < 0.9 {
             vv.0 = to_target.normalize() * 5.;
         }
-        // println!("{:?}", vv);
-        // gi.ray(vt.translation, vv.0 * 10., color::palettes::css::DARK_RED);
     }
 }
 
