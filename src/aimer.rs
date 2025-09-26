@@ -8,7 +8,7 @@ impl Plugin for AimerPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_systems(Startup, startup)
-        .add_systems(OnEnter(GameStage::Aimer), (init, set_help))
+        .add_systems(OnEnter(GameStage::Aimer), (init_ui, set_help))
         .add_systems(Update, update_aimer)
         ;
         
@@ -34,7 +34,7 @@ fn startup(
 
 // ---
 
-fn init(
+fn init_ui(
     mut cmd: Commands,
     slot_q: Query<(Entity, &UiSlot)>,
     ihr: Res<AimerImageHandle>

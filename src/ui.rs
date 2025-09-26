@@ -28,7 +28,7 @@ pub enum UiSlot {
 
 // ---
 
-fn startup(
+pub fn startup(
     mut cmd: Commands,
 ) {
     cmd.spawn((

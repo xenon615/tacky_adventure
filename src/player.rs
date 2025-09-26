@@ -12,10 +12,10 @@ use bevy_tnua_avian3d::{
     TnuaAvian3dPlugin
 };
 
-// use bevy_tnua_avian3d::TnuaAvian3dPlugin;
+use crate::ui::{self, UiSlot};
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
-use crate::shared:: {CastBuild, MaxHealth, Damage ,Player, SetDamage, SetMonologueText};
+use crate::shared:: {CastBuild, Damage, GameStage, Player, SetDamage, SetMonologueText};
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
@@ -26,13 +26,13 @@ impl Plugin for PlayerPlugin {
             TnuaAvian3dPlugin::new(FixedUpdate),
         ))
         .add_plugins(AnimatorHelperPlugin)
-        .add_systems(Startup, startup)
+        .add_systems(Startup, (startup, init_ui).after(ui::startup))
         .add_systems(FixedUpdate, (
             apply_controls,
             movement,
             animate
         ).in_set(TnuaUserControlsSystemSet))
-        .add_systems(Update, timer.run_if(any_with_component::<Interval>))
+        .add_systems(Update, timer.run_if(any_with_component::<NextAfter>))
         .add_observer(build_action)
         .add_observer(on_damage)
         ;
@@ -40,9 +40,6 @@ impl Plugin for PlayerPlugin {
 }
 
 // ---
-
-
-
 
 #[derive(Component)]
 pub struct Movement {
@@ -52,7 +49,9 @@ pub struct Movement {
 }
 
 #[derive(Component)]
-struct Interval(Timer);
+struct NextAfter(Timer, usize);
+
+const MAX_HEALTH: f32 = 100.;
 
 // ---
 
@@ -62,7 +61,7 @@ fn startup(
     mut graphs: ResMut<Assets<AnimationGraph>>,
     asset: ResMut<AssetServer>
 ) {
-    all_animations.add("Player", "models/player.glb", 5, &mut graphs, &asset);
+    all_animations.add("Player", "models/player.glb", 7, &mut graphs, &asset);
     cmd.spawn((
         SceneRoot(asset.load(GltfAssetLabel::Scene(0).from_asset("models/player.glb"))),
         Transform::from_xyz(0., 10., 4.)
@@ -156,9 +155,12 @@ fn animate(
 ) {
     
     let (t, mut ad, tc) = player_q.into_inner();
-    if ad.animation_index == 4 {
+    if [4, 5, 6].contains(&ad.animation_index) {
         return;
-    }
+    } 
+    // if ad.animation_index == 4 {
+    //     return;
+    // }
 
     let Some(basis) = tc.dynamic_basis() else {
         return;
@@ -192,23 +194,21 @@ fn build_action(
  ) {
     let (e, mut ad) = ad_q.into_inner();
     ad.animation_index = 4;
-    cmd.entity(e).insert(Interval(Timer::new(Duration:: from_millis(500), TimerMode::Once)));
+    cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_millis(500), TimerMode::Once), 0));
 }
-
-
 
 // ---
 
 fn timer (
-    timer_q: Single<( Entity, &mut Interval, &mut AniData)>,
+    timer_q: Single<( Entity, &mut NextAfter, &mut AniData)>,
     mut cmd: Commands,
     time: Res<Time>
 ) {
-    let (e, mut i, mut ad) = timer_q.into_inner();
-    i.0.tick(time.delta());
-    if i.0.finished() {
-        cmd.entity(e).remove::<Interval>();
-        ad.animation_index = 0;
+    let (e, mut na, mut ad) = timer_q.into_inner();
+    na.0.tick(time.delta());
+    if na.0.finished() {
+        cmd.entity(e).remove::<NextAfter>();
+        ad.animation_index = na.1;
     }
 }
 
@@ -216,14 +216,48 @@ fn timer (
 
 fn on_damage(
     tr: Trigger<SetDamage>,
-    player_q: Single<(&mut Damage, &MaxHealth)>, 
-    mut cmd: Commands
+    player_q: Single<(Entity ,&mut Damage,  &mut AniData)>, 
+    mut cmd: Commands,
+    mut next: ResMut<NextState<GameStage>>,
+    health_ui_q: Single<(&mut Text, &mut TextColor), With<HealthUI>>
 ) {
-    let (mut damage, max_health) = player_q.into_inner();
-    cmd.trigger(SetMonologueText::new("Ouch!!"));
+    let (e, mut damage,  mut ad) = player_q.into_inner();
+    cmd.trigger(SetMonologueText::new("Ouch!!").with_time(1));
     damage.0 += tr.event().0;
-    if max_health.0 - damage.0 <= 0. {
+    if MAX_HEALTH - damage.0 <= 0. {
         info!("Game Over");
+        ad.animation_index = 5;
+        cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_millis(1500), TimerMode::Once), 6));       
+        next.set(GameStage::Over);
     } 
 
+    let h_per = 100. * (1. - (((damage.0 / MAX_HEALTH) * 100.).round() / 100.));
+    let (mut t, mut c) = health_ui_q.into_inner();
+
+    t.0 = format!("Health: {h_per:.0}%");
+    c.0.set_hue(h_per); 
+
+}
+
+// ---
+
+#[derive(Component)]
+struct HealthUI;
+
+fn init_ui(
+    mut cmd: Commands,
+    slot_q: Query<(Entity, &UiSlot)>,
+) {
+    for (e, s) in &slot_q {
+        if *s == UiSlot::BottomRight {
+            let ch = cmd.spawn((
+                HealthUI,
+                Text::new("Health: 100%"),
+                TextColor(Color::hsl(100., 1.0, 0.5))
+            ))
+            .id()
+            ;
+            cmd.entity(e).add_child(ch);
+        }
+    }
 }

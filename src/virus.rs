@@ -17,9 +17,14 @@ impl Plugin for VirusPlugin {
         app
         .add_plugins(MaterialPlugin::<VirusMaterial>::default())
         .add_systems(OnEnter(GameStage::Build), startup)
-        .add_systems(Update, chase.run_if(resource_exists::<EnabledVirus>))
-        .add_systems(Update, spawn_next.run_if(on_timer(Duration::from_secs(10))))
-
+        .add_systems(Update, chase
+            .run_if(resource_exists::<EnabledVirus>)
+        )
+        .add_systems(Update, spawn_next
+            .run_if(on_timer(Duration::from_secs(10)))
+            .run_if(resource_exists::<EnabledVirus>)
+        )
+        .add_systems(OnEnter(GameStage::Over), | mut cmd: Commands | cmd.remove_resource::<EnabledVirus>() )
         ;
     }
 }

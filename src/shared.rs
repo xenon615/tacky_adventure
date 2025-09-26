@@ -11,20 +11,21 @@ use std::ops::Range;
 #[derive(Event)]
 pub struct CastBuild;
 
-#[derive(Component)]
-#[component(immutable)]
-pub struct MaxHealth(pub f32);
-impl Default for MaxHealth {
-    fn default() -> Self {
-        Self(100.)
-    }
-}
+// #[derive(Component)]
+// #[component(immutable)]
+// pub struct MaxHealth(pub f32);
+// impl Default for MaxHealth {
+//     fn default() -> Self {
+//         Self(100.)
+//     }
+// }
 #[derive(Component, Default)]
 pub struct Damage(pub f32);
 
 
 #[derive(Component)]
-#[require(MaxHealth, Damage)]
+// #[require(MaxHealth, Damage)]
+#[require(Damage)]
 pub struct Player;
 
 #[derive(Event)]
@@ -52,7 +53,8 @@ pub enum GameStage {
     Lift,
     Aimer,
     Eye,
-    Virus
+    Virus,
+    Over
 }
 
 impl GameStage {
@@ -63,7 +65,8 @@ impl GameStage {
             Self::Lift => 2,
             Self::Aimer => 3,
             Self::Eye => 4,
-            Self::Virus => 5
+            Self::Virus => 5,
+            Self::Over => 6
         }
     }
 
@@ -75,6 +78,7 @@ impl GameStage {
             3 => Self::Aimer,
             4 => Self::Eye,
             5 => Self::Virus,
+            6 => Self::Over,
             _ => Self::Intro
         }
 
