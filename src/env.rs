@@ -20,7 +20,7 @@ fn startup(
 
     cmd.spawn((
         DirectionalLight {
-            illuminance: 15000., 
+            illuminance: 1500., 
             ..default()
         },
         Transform::from_xyz(0., 10., 0.).looking_at(Vec3::ZERO, Vec3::Y)

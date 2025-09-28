@@ -1,10 +1,11 @@
 use bevy::{
     pbr::Material, 
     prelude::*, 
-    render::render_resource::{AsBindGroup, ShaderRef}
+    render::render_resource::{AsBindGroup, ShaderRef},
+    color::palettes::css
 };
 
-use crate::shared::{GameStage, Player, PLATFORM_DIM, SetMonologueText};
+use crate::{shared::{vec_rnd, GameStage, Player, SetMonologueText, Threat} };
 
 // ---
 
@@ -13,12 +14,13 @@ impl Plugin for EyesPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_plugins(MaterialPlugin::<EyeMaterial>::default())
-        // .add_systems(Startup, startup)
-        .add_systems(OnEnter(GameStage::Eye), (startup, set_help))
+        .add_systems(OnEnter(GameStage::Build), (startup, set_help))
         .add_systems(Update, (
-            moving, 
             change_mode, 
-            change_color
+            change_color,
+            moving, 
+            detect_threat.run_if(not(any_with_component::<Target>)),
+            aiming.run_if(any_with_component::<Target>)
         ).run_if(resource_exists::<EnabledEyes>)) 
         .add_systems(Update, check_blink.run_if(any_with_component::<Blinking>))
         ;
@@ -57,16 +59,16 @@ pub struct Eye {
 pub enum EyeMode {
     #[default]
     Idle,
-    Patrol,
-    Chase,
-    Attack,
+    Escort,
+    Defence,
 }
 
-const CHASE_TRESHOLD: (f32, f32) = (45., 10.);
 const EYES_COUNT: i8 = 12; 
-const BASE_VELOCITY: f32 = 5.;
+const ESCORT_RELATIVE: Vec3 = Vec3::new(0., 5., 20.);
+const ESCORT_SQUARE_TRESHOLD: f32 = 9.;
+const BASE_VELOCITY: f32 = 1.;
 const ANGLE_STEP: f32 = 360. / (EYES_COUNT as f32);
-const EYE_Y: f32 = 6.;  
+const DETECT_RANGE_SQUARED: f32  = 100.0 * 100.0;
 
 
 #[derive(Component)]
@@ -78,6 +80,8 @@ pub struct Blinking(Timer);
 #[derive(Resource)]
 pub struct EnabledEyes;
 
+#[derive(Component, Clone)]
+pub struct Target(Entity);
 
 // ---
 
@@ -91,13 +95,11 @@ fn startup(
 
     for i in 0..EYES_COUNT {
         cmd.spawn((
-            Transform::from_xyz((i as f32 + 1.) * 20., EYE_Y, 0.)
-            .with_rotation(Quat::from_rotation_y(fastrand::i32(-15 .. 15) as f32))
-            ,
+            Transform::from_translation(vec_rnd(-100 .. 100, -100 .. 100, -100 .. 100)),
             InheritedVisibility::VISIBLE,
             Eye{
                 idx: i as u8,
-                velocity: BASE_VELOCITY + fastrand::f32().powf(2.)  
+                velocity: BASE_VELOCITY + fastrand::f32().powf(4.)  
             },
             EyeMode::Idle,
             children![
@@ -153,17 +155,14 @@ fn change_color(
 ) {
     for (e_mode, children) in &eye_q  {
         let color = match e_mode {
-            EyeMode::Attack => {
-                Color::hsla(0., 1., 0.5, 1.).into()     
+            EyeMode::Defence => {
+                css::RED.into()     
             },
-            EyeMode::Chase => {
-                Color::hsla(60., 1., 0.5, 1.).into() 
-            },
-            EyeMode::Patrol => {
-                Color::hsla(200., 1., 0.5, 1.).into()
+            EyeMode::Escort => {
+                css::GREEN_YELLOW.into()
             },
             EyeMode::Idle => {
-                Color::hsla(270., 1., 0.5, 1.).into()
+                css::GREEN.into()
             }
         };
 
@@ -189,37 +188,69 @@ fn change_color(
 
 fn calc_desired(idx: u8, target: Vec3) -> Vec3{
     let angle = (ANGLE_STEP  * idx as f32).to_radians();
-    let bias = CHASE_TRESHOLD.1 * Vec3::new(angle.cos(), 0., angle.sin());
-    (bias + target).with_y(target.y + EYE_Y)
-
+    let bias = Quat::from_rotation_y(angle).mul_vec3(ESCORT_RELATIVE);
+    bias + target
 }
 
 // ---
 
 fn change_mode (
     mut eye_q: Query<(&Transform, &mut EyeMode, &Eye)>,
-    player_q: Single<&Transform, With<Player>>
+    player_q: Single<&Transform, (With<Player>, Changed<Transform>)>
 ) {
     let player_t = player_q.into_inner();
 
     for (t, mut em, eye) in &mut eye_q {
+        if *em == EyeMode::Defence {continue;}
         let desired = calc_desired(eye.idx, player_t.translation);
-        let ds = (desired - t.translation).length_squared();
+        let distance_squared = desired.distance_squared(t.translation);
+        let crit = distance_squared >= ESCORT_SQUARE_TRESHOLD;
         if let Some(new_em)  = match *em {
-            EyeMode::Idle => Some(EyeMode::Patrol),
-            EyeMode::Patrol if ds < CHASE_TRESHOLD.0.powf(2.) => Some(EyeMode::Chase),
-            EyeMode::Chase => {
-                if ds < 1. {
-                    Some(EyeMode::Attack)
-                } else {
-                    None
-                }
-            },
-            EyeMode::Attack if ds > CHASE_TRESHOLD.1.powf(2.) => Some(EyeMode::Chase),
+            EyeMode::Idle if crit => Some(EyeMode::Escort),
+            EyeMode::Escort if !crit => Some(EyeMode::Idle),
             _ => None
         } {
             *em = new_em
         }
+    }
+}
+
+// ---
+
+fn detect_threat(
+    threat_q: Query<(Entity, &Transform), (With<Threat>, Without<Eye>)>,
+    mut eyes_q: Query<(Entity, &Transform, &mut EyeMode), (Without<Threat>, Without<Target>)>,
+    mut cmd: Commands
+) {
+
+    let mut assigned = vec![];
+    for (threat_e, threat_t) in threat_q {
+        let mut cc = 0;
+        for (eye_e, eye_t, mut eye_mode) in eyes_q
+        .iter_mut()
+         {
+            if assigned.contains(&eye_e) { break; }            
+            if eye_t.translation.distance_squared(threat_t.translation) <= DETECT_RANGE_SQUARED {
+                *eye_mode = EyeMode::Defence;
+                cmd.entity(eye_e).insert(Target(threat_e));
+                assigned.push(eye_e);
+                cc += 1;
+                if cc > 2 {break;}
+            } 
+        }
+    } 
+}
+
+// ---
+
+fn aiming(
+    mut eye_q: Query<(&Target, &mut Transform), Without<Threat>>,
+    threat_q: Query<&Transform, With<Threat>>,
+    time: Res<Time>
+) {
+    for  (target_e, mut t) in &mut eye_q {
+        let Ok(target_t) = threat_q.get(target_e.0) else {continue;};
+        t.rotation = t.rotation.slerp(t.looking_at(target_t.translation, Vec3::Y).rotation, time.delta_secs())
     }
 }
 
@@ -234,35 +265,24 @@ fn moving (
     
     let player_t = player_q.into_inner();
     for (mut t, em, eye ) in &mut eye_q {
-        let mut qua = 0.;
-        match em {
-            EyeMode::Patrol => {
-                let center = Vec3::ZERO.with_y(5.);
-                
-                if t.translation.distance_squared(center) >=  PLATFORM_DIM.z.powf(2.) * 4.
-                &&
-                 (center - t.translation).normalize().dot(*t.forward()) <= 0.9 
-                {
-                    t.rotate_y(1.0_f32.to_radians());
-                }
-                qua = 4.;
-            },
-            EyeMode::Chase => {
-                let desired = calc_desired(eye.idx, player_t.translation);    
-                t.rotation = t.rotation.slerp(t.looking_at(desired, Vec3::Y).rotation, time.delta_secs() * 10.);
-                qua = 2.;
-            },
-            EyeMode::Attack => {
-                let look_at = player_t.translation + Vec3::Y * 1.2;
-                t.rotation = t.rotation.slerp(t.looking_at(look_at, Vec3::Y).rotation, time.delta_secs() * 10.);
-            },
-            _ => ()
-        }
 
-        if qua != 0. {
-            let m = t.forward() * time.delta_secs() * qua * eye.velocity;
-            t.translation += m;
-        }
+        let looking_at = match em {
+            EyeMode::Escort => {
+                let desired = calc_desired(eye.idx, player_t.translation);
+                let qua = desired.distance_squared(t.translation).log2();
+                let m = t.forward() * time.delta_secs() * qua * eye.velocity;
+                t.translation += m;
+
+                desired
+            },
+            EyeMode::Idle => {
+                player_t.translation + Vec3::Y * 1.2
+            },
+            _ => Vec3::ZERO
+        };
+
+        t.rotation = t.rotation.slerp(t.looking_at(looking_at, Vec3::Y).rotation, time.delta_secs() * 10.);
+
     }
 }
 

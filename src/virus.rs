@@ -7,7 +7,7 @@ use bevy:: {
 
 use avian3d::prelude::*;
 use std::{ops::{Add, Mul}, time::Duration};
-use crate::shared::{vec_rnd, Player, SetDamage};
+use crate::shared::{vec_rnd, Player, SetDamage, Threat};
 
 use crate::shared::{GameStage, fibonacci_sphere, closest, SetMonologueText};
 
@@ -52,6 +52,7 @@ impl Material for VirusMaterial {
 // ---
 
 #[derive(Component, Clone)]
+#[require(Threat)]
 pub struct Virus;
 
 #[derive(Component)]

@@ -24,13 +24,14 @@ pub struct Damage(pub f32);
 
 
 #[derive(Component)]
-// #[require(MaxHealth, Damage)]
 #[require(Damage)]
 pub struct Player;
 
 #[derive(Event)]
 pub struct SetDamage(pub f32);
 
+#[derive(Component, Default)]
+pub struct Threat;
 
 #[derive(Event)]
 pub struct SetMonologueText<'a>{pub text: &'a str, pub time: u64}

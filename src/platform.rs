@@ -17,10 +17,7 @@ impl Plugin for PlatformPlugin {
         app
         .add_plugins(MaterialPlugin::<PlatformMaterial>::default())
         .add_systems(Startup, startup)
-        // .add_systems(Update, gismos)
         .add_systems(OnEnter(GameStage::Build), (change_color, set_help).chain())
-        // .add_systems(OnEnter(GameStage::Build), startup)
-        // .add_systems(Update, (change_color, set_help).run_if(resource_added::<PlatformMaterialHandle>))
         .add_systems(
             Update, build_single.run_if(
                 not(in_state(GameStage::Intro))
@@ -47,6 +44,7 @@ pub struct PlatformMaterial {
 
 impl Material for PlatformMaterial {
     fn fragment_shader() -> ShaderRef {
+        // "shaders/platform.wgsl".into()
         "shaders/platform.wgsl".into()
     }
 
