@@ -30,8 +30,30 @@ pub struct Player;
 #[derive(Event)]
 pub struct SetDamage(pub f32);
 
+#[derive(Event, Debug)]
+pub struct Shot {
+    pub position: Vec3,
+    pub direction: Dir3
+}
+
+
 #[derive(Component, Default)]
 pub struct Threat;
+
+#[derive(Component, Clone)]
+pub struct Target(pub Entity);
+
+#[derive(Component, Default, Clone)]
+pub struct TargettedBy(pub Vec<Entity>);
+
+#[derive(Component, Default, Clone)]
+#[require(TargettedBy)]
+pub struct Targetable;
+
+#[derive(Component)]
+pub struct LifeTime(pub Timer);
+
+
 
 #[derive(Event)]
 pub struct SetMonologueText<'a>{pub text: &'a str, pub time: u64}

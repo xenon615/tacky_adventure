@@ -11,7 +11,7 @@ use avian3d::{
     // debug_render::PhysicsDebugPlugin
 };
 
-use crate::shared::GameStage;
+use crate::shared::{GameStage, Targetable, Target};
 
 mod shared;
 mod camera;
@@ -28,6 +28,7 @@ mod monologue;
 mod help;
 mod aimer;
 mod virus;
+mod missile;
 
 fn main() {
     let mut app = App::new();
@@ -40,6 +41,8 @@ fn main() {
         camera::CameraPlugin,
         env::EnvPlugin,
         eye::EyesPlugin,
+    ))
+    .add_plugins((
         player::PlayerPlugin,
         platform::PlatformPlugin,
         lift::LiftPlugin,
@@ -48,7 +51,8 @@ fn main() {
         monologue::MonologuePlugin,
         help:: HelpPlugin,
         aimer::AimerPlugin,
-        virus::VirusPlugin
+        virus::VirusPlugin,
+        missile::MissilePlugin
     ))
     // .add_plugins((
         
@@ -57,6 +61,22 @@ fn main() {
     // .add_plugins(EguiPlugin::default() )
     // .add_plugins(WorldInspectorPlugin::new())
     .init_state::<GameStage>()
+    .add_observer(clear_targets)
     .run()
     ;
 }
+
+
+fn clear_targets(
+    tr: Trigger<OnRemove, Targetable>,
+    q: Query<(Entity, &Target)>,
+    mut cmd: Commands
+) {
+    let e = tr.target();
+    for (et, t) in &q {
+        if t.0 == e {
+            cmd.entity(et).remove::<Target>();
+        } 
+
+    }
+}  

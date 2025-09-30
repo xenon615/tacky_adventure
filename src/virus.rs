@@ -9,7 +9,7 @@ use avian3d::prelude::*;
 use std::{ops::{Add, Mul}, time::Duration};
 use crate::shared::{vec_rnd, Player, SetDamage, Threat};
 
-use crate::shared::{GameStage, fibonacci_sphere, closest, SetMonologueText};
+use crate::shared::{GameStage, fibonacci_sphere, closest, SetMonologueText, Targetable, Damage};
 
 pub struct VirusPlugin;
 impl Plugin for VirusPlugin {
@@ -52,14 +52,14 @@ impl Material for VirusMaterial {
 // ---
 
 #[derive(Component, Clone)]
-#[require(Threat)]
+#[require(Threat, Targetable)]
 pub struct Virus;
 
 #[derive(Component)]
 pub struct VirusSample;
 
-#[derive(Resource)]
-pub struct VirusMaterialHandle(Handle<VirusMaterial>);
+// #[derive(Resource)]
+// pub struct VirusMaterialHandle(Handle<VirusMaterial>);
 
 #[derive(Resource)]
 pub struct EnabledVirus;
@@ -67,7 +67,7 @@ pub struct EnabledVirus;
 
 // ---
 
-const DAMAGE: f32 = 1.;
+const DAMAGE_VALUE: f32 = 1.;
 
 // ---
 
@@ -89,7 +89,7 @@ fn startup(
 
     mesh.compute_normals();
     cmd.spawn((
-        Transform::from_xyz(1000., 0., 0.),
+        Transform::from_xyz(10000., 20., 20.),
         Visibility::Hidden,
         Mesh3d(meshes.add(mesh)),
         MeshMaterial3d(materials.add(Color::hsl(250., 1., 0.5))),
@@ -100,6 +100,7 @@ fn startup(
         Sensor,
         CollisionEventsEnabled,
         VirusSample, 
+        // Virus
     ))
     ;
 
@@ -127,12 +128,12 @@ fn chase(
 
 fn touch(
     tr: Trigger<OnCollisionStart>,
-    player_q: Query<&Player>,
+    damageable_q: Query<&Damage>,
     mut cmd: Commands
 ) {
     if let Some(ce)  = tr.body {
-        if player_q.get(ce).is_ok() {
-            cmd.trigger(SetDamage(DAMAGE));
+        if damageable_q.get(ce).is_ok() {
+            cmd.trigger(SetDamage(DAMAGE_VALUE));
             cmd.entity(tr.target()).despawn();
         }
     }
@@ -153,7 +154,7 @@ fn spawn_next(
     .insert((
         Virus,
         Visibility::Visible,   
-        Position::new(vec_rnd(-20 .. 20, -10 .. 10, -20 .. 20)),
+        Position::new(vec_rnd(-200 .. 200, 0 .. 100, -200 .. 200)),
     )).observe(touch)
     ;
 }

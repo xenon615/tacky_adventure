@@ -5,7 +5,7 @@ use bevy::{
     color::palettes::css
 };
 
-use crate::{shared::{vec_rnd, GameStage, Player, SetMonologueText, Threat} };
+use crate::shared::{vec_rnd, GameStage, Player, SetMonologueText, Shot, Target, TargettedBy, Threat};
 
 // ---
 
@@ -16,11 +16,15 @@ impl Plugin for EyesPlugin {
         .add_plugins(MaterialPlugin::<EyeMaterial>::default())
         .add_systems(OnEnter(GameStage::Build), (startup, set_help))
         .add_systems(Update, (
+            gizmos,
             change_mode, 
             change_color,
             moving, 
-            detect_threat.run_if(not(any_with_component::<Target>)),
-            aiming.run_if(any_with_component::<Target>)
+            detect_threat
+            .run_if(any_with_component::<Threat>),
+            // .run_if(not(any_with_component::<Target>)),
+            aiming
+            .run_if(any_with_component::<Target>)
         ).run_if(resource_exists::<EnabledEyes>)) 
         .add_systems(Update, check_blink.run_if(any_with_component::<Blinking>))
         ;
@@ -63,7 +67,7 @@ pub enum EyeMode {
     Defence,
 }
 
-const EYES_COUNT: i8 = 12; 
+const EYES_COUNT: i8 = 3; 
 const ESCORT_RELATIVE: Vec3 = Vec3::new(0., 5., 20.);
 const ESCORT_SQUARE_TRESHOLD: f32 = 9.;
 const BASE_VELOCITY: f32 = 1.;
@@ -80,8 +84,6 @@ pub struct Blinking(Timer);
 #[derive(Resource)]
 pub struct EnabledEyes;
 
-#[derive(Component, Clone)]
-pub struct Target(Entity);
 
 // ---
 
@@ -125,7 +127,9 @@ fn startup(
                     Transform::from_translation(-Vec3::Z * 4.)
                 )
             ]
-        ));
+        ))
+        .observe(loose_target)
+        ;
                
     }
     cmd.insert_resource(EnabledEyes);
@@ -137,10 +141,13 @@ fn startup(
 #[allow(dead_code)]
 fn gizmos(
     mut gizmos: Gizmos,
-    sht: Query<&GlobalTransform, With<Spot>>
+    q: Query<&Transform, With<Eye>>
+    // q : Query<&GlobalTransform, With<Spot>>
+
 ) {
-    for t in &sht {
-        gizmos.axes(*t, 10.);
+    for t in &q {
+        // gizmos.axes(*t, 10.);
+        gizmos.ray(t.translation, t.forward() * 100., css::BURLYWOOD);
     }
 }
 
@@ -218,24 +225,28 @@ fn change_mode (
 // ---
 
 fn detect_threat(
-    threat_q: Query<(Entity, &Transform), (With<Threat>, Without<Eye>)>,
+    mut threat_q: Query<(Entity, &Transform, &mut TargettedBy), (With<Threat>, Without<Eye>)>,
     mut eyes_q: Query<(Entity, &Transform, &mut EyeMode), (Without<Threat>, Without<Target>)>,
     mut cmd: Commands
 ) {
 
+    if eyes_q.is_empty() {
+        return;
+    }
     let mut assigned = vec![];
-    for (threat_e, threat_t) in threat_q {
-        let mut cc = 0;
-        for (eye_e, eye_t, mut eye_mode) in eyes_q
-        .iter_mut()
-         {
-            if assigned.contains(&eye_e) { break; }            
+    for (threat_e, threat_t, mut threat_tb) in threat_q.iter_mut() {
+        if threat_tb.0.len() == 2 {
+            continue;
+        }
+        for (eye_e, eye_t, mut eye_mode) in &mut eyes_q {
+            if *eye_mode == EyeMode::Defence {
+                continue;
+            }
             if eye_t.translation.distance_squared(threat_t.translation) <= DETECT_RANGE_SQUARED {
                 *eye_mode = EyeMode::Defence;
                 cmd.entity(eye_e).insert(Target(threat_e));
-                assigned.push(eye_e);
-                cc += 1;
-                if cc > 2 {break;}
+                assigned.push(threat_e);
+                threat_tb.0.push(eye_e);
             } 
         }
     } 
@@ -246,12 +257,38 @@ fn detect_threat(
 fn aiming(
     mut eye_q: Query<(&Target, &mut Transform), Without<Threat>>,
     threat_q: Query<&Transform, With<Threat>>,
-    time: Res<Time>
+    time: Res<Time>,
+    mut cmd: Commands,
+    // mut giz: Gizmos
 ) {
     for  (target_e, mut t) in &mut eye_q {
-        let Ok(target_t) = threat_q.get(target_e.0) else {continue;};
-        t.rotation = t.rotation.slerp(t.looking_at(target_t.translation, Vec3::Y).rotation, time.delta_secs())
+        let Ok(target_t) = threat_q.get(target_e.0) else {
+            continue;
+        };
+        // giz.ray(t.translation, t.forward() * 100., css::BLUE_VIOLET);
+        // giz.axes(*target_t, 10.);
+        // info!("{:?}", target_t.translation);
+        // giz.ray(t.translation, target_t.translation - t.translation, css::BLUE_VIOLET);
+
+
+        t.rotation = t.rotation.slerp(t.looking_at(target_t.translation, Vec3::Y).rotation, time.delta_secs() * 5.);
+        let to_target = (target_t.translation - t.translation).normalize();
+        if t.forward().dot(to_target) > 0.95 {
+            cmd.trigger(Shot{direction: t.forward(), position: t.translation + t.forward() * 2.});
+        }
     }
+}
+
+// ---
+
+fn loose_target(
+    tr: Trigger<OnRemove, Target>,
+    mut em_q: Query<&mut EyeMode>
+    
+) -> Result {
+    let mut em = em_q.get_mut(tr.target())?;
+    *em = EyeMode::Idle;
+    Ok(())
 }
 
 // ---
@@ -266,24 +303,24 @@ fn moving (
     let player_t = player_q.into_inner();
     for (mut t, em, eye ) in &mut eye_q {
 
-        let looking_at = match em {
+        if let Some(looking_at) = match em {
             EyeMode::Escort => {
                 let desired = calc_desired(eye.idx, player_t.translation);
                 let qua = desired.distance_squared(t.translation).log2();
                 let m = t.forward() * time.delta_secs() * qua * eye.velocity;
                 t.translation += m;
 
-                desired
+                Some(desired)
             },
             EyeMode::Idle => {
-                player_t.translation + Vec3::Y * 1.2
+                Some(player_t.translation + Vec3::Y * 1.2)
             },
-            _ => Vec3::ZERO
-        };
-
-        t.rotation = t.rotation.slerp(t.looking_at(looking_at, Vec3::Y).rotation, time.delta_secs() * 10.);
-
+            _ =>  None
+        } {
+            t.rotation = t.rotation.slerp(t.looking_at(looking_at, Vec3::Y).rotation, time.delta_secs() * 10.);
+        } else {continue;}
     }
+
 }
 
 // ---
