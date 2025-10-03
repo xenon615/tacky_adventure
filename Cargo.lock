@@ -821,7 +821,7 @@ dependencies = [
 [[package]]
 name = "bevy_gltf_animator_helper"
 version = "0.2.0"
-source = "git+https://github.com/xenon615/bevy_gltf_animator_helper#6d20a12a65f5a54953ed1d86a4730c78c6eeb4ae"
+source = "git+https://github.com/xenon615/bevy_gltf_animator_helper.git?tag=v0.2.0#6d20a12a65f5a54953ed1d86a4730c78c6eeb4ae"
 dependencies = [
  "bevy",
 ]

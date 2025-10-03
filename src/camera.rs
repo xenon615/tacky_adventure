@@ -15,7 +15,7 @@ use bevy::{
 };
 
 use avian3d::schedule::PhysicsSet;
-use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
+// use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
 use crate::shared::Player;
 use crate::shared::GameStage;

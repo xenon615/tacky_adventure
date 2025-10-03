@@ -5,7 +5,7 @@ use bevy::{
     color::palettes::css
 };
 
-use crate::shared::{vec_rnd, GameStage, Player, SetMonologueText, Shot, Target, TargettedBy, Threat};
+use crate::shared::{vec_rnd, GameStage, Player, SetMonologueText, Shot, Target, TargetedBy, Threat};
 
 // ---
 
@@ -16,15 +16,14 @@ impl Plugin for EyesPlugin {
         .add_plugins(MaterialPlugin::<EyeMaterial>::default())
         .add_systems(OnEnter(GameStage::Build), (startup, set_help))
         .add_systems(Update, (
-            gizmos,
+            // gizmos,
             change_mode, 
             change_color,
             moving, 
             detect_threat
             .run_if(any_with_component::<Threat>),
-            // .run_if(not(any_with_component::<Target>)),
-            aiming
-            .run_if(any_with_component::<Target>)
+            check_ammo_load.run_if(any_with_component::<PrepareToShot>),
+            aiming.run_if(any_with_component::<Target>)
         ).run_if(resource_exists::<EnabledEyes>)) 
         .add_systems(Update, check_blink.run_if(any_with_component::<Blinking>))
         ;
@@ -57,6 +56,10 @@ pub struct Eye {
     velocity: f32
 }
 
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct PrepareToShot(Timer);
+
 
 
 #[derive(Component, Default, PartialEq, Debug)]
@@ -73,6 +76,7 @@ const ESCORT_SQUARE_TRESHOLD: f32 = 9.;
 const BASE_VELOCITY: f32 = 1.;
 const ANGLE_STEP: f32 = 360. / (EYES_COUNT as f32);
 const DETECT_RANGE_SQUARED: f32  = 100.0 * 100.0;
+const AMMO_LOAD_TIME: f32 = 2.;
 
 
 #[derive(Component)]
@@ -225,7 +229,7 @@ fn change_mode (
 // ---
 
 fn detect_threat(
-    mut threat_q: Query<(Entity, &Transform, &mut TargettedBy), (With<Threat>, Without<Eye>)>,
+    mut threat_q: Query<(Entity, &Transform, &mut TargetedBy), (With<Threat>, Without<Eye>)>,
     mut eyes_q: Query<(Entity, &Transform, &mut EyeMode), (Without<Threat>, Without<Target>)>,
     mut cmd: Commands
 ) {
@@ -255,13 +259,13 @@ fn detect_threat(
 // ---
 
 fn aiming(
-    mut eye_q: Query<(&Target, &mut Transform), Without<Threat>>,
+    mut eye_q: Query<(Entity, &Target, &mut Transform, Option<&PrepareToShot>), Without<Threat>>,
     threat_q: Query<&Transform, With<Threat>>,
     time: Res<Time>,
     mut cmd: Commands,
     // mut giz: Gizmos
 ) {
-    for  (target_e, mut t) in &mut eye_q {
+    for  (e, target_e, mut t, opsh) in &mut eye_q {
         let Ok(target_t) = threat_q.get(target_e.0) else {
             continue;
         };
@@ -274,7 +278,10 @@ fn aiming(
         t.rotation = t.rotation.slerp(t.looking_at(target_t.translation, Vec3::Y).rotation, time.delta_secs() * 5.);
         let to_target = (target_t.translation - t.translation).normalize();
         if t.forward().dot(to_target) > 0.95 {
-            cmd.trigger(Shot{direction: t.forward(), position: t.translation + t.forward() * 2.});
+            if opsh.is_none() {
+                cmd.trigger(Shot{direction: t.forward(), position: t.translation + t.forward() * 2.});
+                cmd.entity(e).insert(PrepareToShot(Timer::from_seconds(AMMO_LOAD_TIME, TimerMode::Once)));
+            }
         }
     }
 }
@@ -340,6 +347,22 @@ fn check_blink(
         }
     }
 }
+
+// ---
+
+fn check_ammo_load (
+    mut cmd: Commands,
+    mut lt_q: Query<(Entity, &mut PrepareToShot)>,
+    time: Res<Time>
+) {
+    for (e, mut l) in &mut lt_q {
+        l.0.tick(time.delta());
+        if l.0.finished() {
+            cmd.entity(e).remove::<PrepareToShot>();
+        }
+    }
+}
+
 
 // ---
 

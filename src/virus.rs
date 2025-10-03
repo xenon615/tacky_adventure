@@ -1,5 +1,5 @@
 use bevy:: {
-    color, log::tracing_subscriber::fmt::time, pbr::Material, prelude::*, render::{
+    color, log::tracing_subscriber::fmt::time, math::VectorSpace, pbr::Material, prelude::*, render::{
         mesh::{SphereKind, VertexAttributeValues}, render_resource::{AsBindGroup, ShaderRef},
         view::VisibilityClass,
     }, time::common_conditions::on_timer
@@ -7,9 +7,9 @@ use bevy:: {
 
 use avian3d::prelude::*;
 use std::{ops::{Add, Mul}, time::Duration};
-use crate::shared::{vec_rnd, Player, SetDamage, Threat};
+use crate::shared::{vec_rnd, DamageDeal, HealthMax, Player, Threat};
 
-use crate::shared::{GameStage, fibonacci_sphere, closest, SetMonologueText, Targetable, Damage};
+use crate::shared::{GameStage, fibonacci_sphere, closest, SetMonologueText, Targetable};
 
 pub struct VirusPlugin;
 impl Plugin for VirusPlugin {
@@ -68,6 +68,7 @@ pub struct EnabledVirus;
 // ---
 
 const DAMAGE_VALUE: f32 = 1.;
+const MAX_HEALTH: f32 = 10.;
 
 // ---
 
@@ -89,18 +90,17 @@ fn startup(
 
     mesh.compute_normals();
     cmd.spawn((
-        Transform::from_xyz(10000., 20., 20.),
-        Visibility::Hidden,
+        Transform::from_xyz(4., 2., 0.),
         Mesh3d(meshes.add(mesh)),
         MeshMaterial3d(materials.add(Color::hsl(250., 1., 0.5))),
         RigidBody::Kinematic,
         ColliderConstructor::TrimeshFromMesh,
         AngularVelocity(Vec3::new(1., 1., 1.)),
-        LinearVelocity(Vec3::Y),
         Sensor,
         CollisionEventsEnabled,
+        Name::new("Virus"),
+        Visibility::Hidden,
         VirusSample, 
-        // Virus
     ))
     ;
 
@@ -126,21 +126,6 @@ fn chase(
 
 // ---
 
-fn touch(
-    tr: Trigger<OnCollisionStart>,
-    damageable_q: Query<&Damage>,
-    mut cmd: Commands
-) {
-    if let Some(ce)  = tr.body {
-        if damageable_q.get(ce).is_ok() {
-            cmd.trigger(SetDamage(DAMAGE_VALUE));
-            cmd.entity(tr.target()).despawn();
-        }
-    }
-}
-
-// ---
-
 fn spawn_next(
     mut cmd: Commands,
     v_q: Single<Entity, With<VirusSample>>
@@ -154,7 +139,11 @@ fn spawn_next(
     .insert((
         Virus,
         Visibility::Visible,   
-        Position::new(vec_rnd(-200 .. 200, 0 .. 100, -200 .. 200)),
-    )).observe(touch)
+        Position::new(vec_rnd(100 .. 200, 5 .. 50, 100 .. 200)),
+        LinearVelocity(Vec3::Y),
+        Targetable,
+        HealthMax(1.),
+        DamageDeal(1.)
+    ))
     ;
 }

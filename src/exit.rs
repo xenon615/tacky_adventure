@@ -66,7 +66,9 @@ fn start(
         RigidBody::Kinematic,
         Collider::cuboid(4., 4., 4.),
         CollisionEventsEnabled,
-        Sensor
+        Sensor,
+        Name::new("Exit")
+
     ))
     .observe(on_collide)
     ;

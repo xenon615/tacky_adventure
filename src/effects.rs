@@ -21,8 +21,8 @@ pub fn steam() -> EffectAsset{
     );
     let render_color = ColorOverLifetimeModifier {
         gradient:  Gradient::from_keys([
-            (0.0, Vec4::new(0.2, 0.0, 0.9, 0.0)),
-            (0.5, Vec4::new(0.2, 0.0, 1.0, 1.0)),
+            (0.0, Vec4::new(1.0, 0.0, 0.9, 0.0)),
+            (0.5, Vec4::new(0.1, 0.0, 1.0, 1.0)),
             (2.0, Vec4::new(0.0, 0.0, 0.0, 0.0)),
         ]),
         blend: ColorBlendMode::Overwrite,
@@ -32,7 +32,7 @@ pub fn steam() -> EffectAsset{
     let render_size = SizeOverLifetimeModifier {
         gradient: Gradient::from_keys([
             (0.3, Vec3::new(5.0, 5.0, 5.0)),
-            (1.0, Vec3::new(7.0, 7.0, 7.0)),
+            (1.0, Vec3::new(2.0, 2.0, 2.0)),
         ]),
         ..default()
     };    
@@ -64,4 +64,139 @@ pub fn steam() -> EffectAsset{
     .render(OrientModifier::new(OrientMode::FaceCameraPosition))
     
 
+}
+
+// ---
+
+pub fn jet_stream() -> EffectAsset{
+    let render_color = ColorOverLifetimeModifier::new(Gradient::from_keys(
+        vec![
+            (0.0, Vec4::new(2., 2., 2., 1.)),
+            (0.3, Vec4::new(2., 2., 0., 1.)),
+            (0.5, Vec4::new(0.3, 5.0, 0.0, 0.0))
+        ]
+    ));
+    
+    let render_size = SizeOverLifetimeModifier {
+        gradient: Gradient::from_keys(vec![
+            (0.0, Vec3::splat(1.0)),
+            (0.5, Vec3::splat(0.9)),
+            (1., Vec3::splat(0.))
+        ]),
+        screen_space_size:false
+    };
+    let writer = ExprWriter::new();
+
+    let init_age = SetAttributeModifier::new(
+        Attribute::AGE, 
+        writer.lit(0.).uniform(writer.lit(0.02)).expr()
+    );
+
+    let init_lifetime = SetAttributeModifier::new(
+        Attribute::LIFETIME, 
+        writer.lit(0.5).uniform(writer.lit(0.3)).expr()
+    );
+
+    let init_pos = SetPositionCone3dModifier {
+        height: writer.lit(2.).expr(),
+        base_radius: writer.lit(0.2).expr(),
+        top_radius: writer.lit(0.1).expr(),
+        dimension: ShapeDimension::Surface,
+    };
+
+    let init_velocity = SetVelocitySphereModifier {
+        center: writer.lit(Vec3::ZERO).expr(),
+        speed: (writer.rand(ScalarType::Float) * writer.lit(2.) + writer.lit(2.)).expr(),
+    };
+
+    let render_texture = ParticleTextureModifier {
+        texture_slot: writer.lit(0u32).expr(),
+        sample_mapping: ImageSampleMapping::ModulateOpacityFromR
+    };
+
+
+    let mut module = writer.finish();
+    module.add_texture_slot("cloud");
+    EffectAsset::new(
+        1000,
+        SpawnerSettings::rate(200.0.into())
+        .with_emit_on_start(true)
+        ,
+       module
+    )
+    .init(init_age)
+    .init(init_lifetime)
+    .init(init_pos)
+    .init(init_velocity)
+    .render(render_size)
+    .render(render_color)
+    .render(render_texture)
+
+    .render(OrientModifier::new(OrientMode::FaceCameraPosition))
+}
+
+// ---
+
+pub fn blast () -> EffectAsset {
+    let render_color = ColorOverLifetimeModifier::new(
+        Gradient::from_keys(
+            vec![
+                (0.0, Vec4::new(2., 2., 2., 1.)),
+                (0.05, Vec4::new(2., 0., 0., 1.)),
+                (0.1, Vec4::new(0.0, 10.0, 0.0, 0.1)),
+                (0.2, Vec4::new(10.0, 0.0, 0.0, 0.1))
+            ]
+        )
+    );
+
+    let render_size = SetSizeModifier {
+        size: Vec3::splat(4.0).into(),
+        ..default()
+    };
+
+    let writer = ExprWriter::new();
+
+    let init_age = SetAttributeModifier::new(
+        Attribute::AGE, 
+        writer.lit(0.).uniform(writer.lit(0.02)).expr()
+    );
+
+    let init_lifetime = SetAttributeModifier::new(
+        Attribute::LIFETIME,
+        writer.lit(0.2).expr()
+    );
+
+    let init_pos = SetPositionSphereModifier {
+        center: writer.lit(Vec3::ZERO).expr(),
+        radius: writer.lit(2.).expr(),
+        dimension: ShapeDimension::Surface,
+    };
+
+    let init_vel = SetVelocitySphereModifier {
+        center: writer.lit(Vec3::ZERO).expr(),
+        speed: (writer.rand(ScalarType::Float) * writer.lit(20.)).expr(),
+    };
+
+    let render_texture = ParticleTextureModifier {
+        texture_slot: writer.lit(0u32).expr(),
+        sample_mapping: ImageSampleMapping::ModulateOpacityFromR
+    };
+
+    let mut module = writer.finish();
+    module.add_texture_slot("cloud");
+
+    EffectAsset::new(
+        1000,
+        SpawnerSettings::once(100.0.into())
+        .with_emit_on_start(false),
+        module,
+    )
+    .init(init_pos)
+    .init(init_vel)
+    .init(init_age)
+    .init(init_lifetime)
+    .render(render_color)
+    .render(render_size)
+    .render(render_texture)
+    .render(OrientModifier::new(OrientMode::FaceCameraPosition))
 }

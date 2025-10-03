@@ -29,6 +29,7 @@ mod help;
 mod aimer;
 mod virus;
 mod missile;
+mod damage;
 
 fn main() {
     let mut app = App::new();
@@ -52,14 +53,15 @@ fn main() {
         help:: HelpPlugin,
         aimer::AimerPlugin,
         virus::VirusPlugin,
-        missile::MissilePlugin
+        missile::MissilePlugin,
+        damage::DamagePlugin
     ))
     // .add_plugins((
         
     //     PhysicsDebugPlugin::default(),
     // ))
-    // .add_plugins(EguiPlugin::default() )
-    // .add_plugins(WorldInspectorPlugin::new())
+    .add_plugins(EguiPlugin::default() )
+    .add_plugins(WorldInspectorPlugin::new())
     .init_state::<GameStage>()
     .add_observer(clear_targets)
     .run()

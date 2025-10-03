@@ -2,33 +2,17 @@ use bevy::prelude::*;
 use avian3d::prelude::*;
 use std::ops::Range;
 
-// #[allow(dead_code)]
-// pub fn color2vec4(c: Color) -> Vec4 {
-//     let color = c.to_srgba();
-//     Vec4::new(color.red, color.green, color.blue, color.alpha)
-// }
 
 #[derive(Event)]
 pub struct CastBuild;
 
-// #[derive(Component)]
-// #[component(immutable)]
-// pub struct MaxHealth(pub f32);
-// impl Default for MaxHealth {
-//     fn default() -> Self {
-//         Self(100.)
-//     }
-// }
-#[derive(Component, Default)]
-pub struct Damage(pub f32);
 
 
 #[derive(Component)]
-#[require(Damage)]
 pub struct Player;
 
-#[derive(Event)]
-pub struct SetDamage(pub f32);
+// #[derive(Event)]
+// pub struct SetDamage(pub f32);
 
 #[derive(Event, Debug)]
 pub struct Shot {
@@ -44,10 +28,26 @@ pub struct Threat;
 pub struct Target(pub Entity);
 
 #[derive(Component, Default, Clone)]
-pub struct TargettedBy(pub Vec<Entity>);
+pub struct Damage(pub f32);
+
+#[derive(Component)]
+pub struct DamageDeal(pub f32);
+
+#[derive(Component)]
+pub struct DamageCallback;
+
+#[derive(Event)]
+pub struct DamageDealed;
+
+#[derive(Component)]
+#[require(Damage)]
+pub struct HealthMax(pub f32);
 
 #[derive(Component, Default, Clone)]
-#[require(TargettedBy)]
+pub struct TargetedBy(pub Vec<Entity>);
+
+#[derive(Component, Default, Clone)]
+#[require(TargetedBy)]
 pub struct Targetable;
 
 #[derive(Component)]

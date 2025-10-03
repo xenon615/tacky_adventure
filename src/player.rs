@@ -3,19 +3,16 @@ use std::time::Duration;
 use avian3d::prelude::*;
 use bevy::{
     // gizmos, 
-    // pbr:: {NotShadowCaster, NotShadowReceiver}, 
-    color::palettes::basic, ecs::system::entity_command::observe, input::{keyboard::KeyboardInput, mouse::MouseMotion}, prelude::*, scene::SceneInstanceReady
+    prelude::*, 
+    scene::SceneInstanceReady
 };
 use bevy_tnua::prelude::*;
-use bevy_tnua_avian3d::{
-    *,
-    TnuaAvian3dPlugin
-};
+use bevy_tnua_avian3d::{*, TnuaAvian3dPlugin};
 
-use crate::ui::{self, UiSlot};
+use crate::{shared::{DamageCallback, DamageDeal, DamageDealed, HealthMax, Targetable}, ui::{self, UiSlot}};
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
-use crate::shared:: {CastBuild, Damage, GameStage, Player, SetDamage, SetMonologueText};
+use crate::shared:: {CastBuild, Damage, GameStage, Player, SetMonologueText};
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
@@ -34,7 +31,7 @@ impl Plugin for PlayerPlugin {
         ).in_set(TnuaUserControlsSystemSet))
         .add_systems(Update, timer.run_if(any_with_component::<NextAfter>))
         .add_observer(build_action)
-        .add_observer(on_damage)
+    
         ;
     }
 }
@@ -51,8 +48,6 @@ pub struct Movement {
 #[derive(Component)]
 struct NextAfter(Timer, usize);
 
-const MAX_HEALTH: f32 = 100.;
-
 // ---
 
 fn startup(
@@ -67,6 +62,7 @@ fn startup(
         Transform::from_xyz(0., 10., 4.)
         .looking_to(-Vec3::Z, Vec3::Y),
         Player,
+        Targetable,
         AniData::new("Player", 1),
         TnuaController::default(),
         TnuaAvian3dSensorShape(Collider::cylinder(0.49, 0.0)),
@@ -76,9 +72,14 @@ fn startup(
         ]),
         Movement{direction: 0, rotation: 0, jump: false},
         Name::new("Player"),
+        HealthMax(100.),
+        CollisionEventsEnabled,
+        DamageDeal(1.),
+        DamageCallback
 
      ))
      .observe(on_ready)
+     .observe(on_damage)
      ;
 }
 
@@ -158,9 +159,6 @@ fn animate(
     if [4, 5, 6].contains(&ad.animation_index) {
         return;
     } 
-    // if ad.animation_index == 4 {
-    //     return;
-    // }
 
     let Some(basis) = tc.dynamic_basis() else {
         return;
@@ -215,23 +213,22 @@ fn timer (
 // ---
 
 fn on_damage(
-    tr: Trigger<SetDamage>,
-    player_q: Single<(Entity ,&mut Damage,  &mut AniData)>, 
+    tr: Trigger<DamageDealed>,
+    player_q: Single<(&mut AniData, &Damage, &HealthMax)>, 
     mut cmd: Commands,
     mut next: ResMut<NextState<GameStage>>,
     health_ui_q: Single<(&mut Text, &mut TextColor), With<HealthUI>>
 ) {
-    let (e, mut damage,  mut ad) = player_q.into_inner();
+    let (mut ad, damage, hm) = player_q.into_inner();
     cmd.trigger(SetMonologueText::new("Ouch!!").with_time(1));
-    damage.0 += tr.event().0;
-    if MAX_HEALTH - damage.0 <= 0. {
+    if hm.0 - damage.0 <= 0. {
         info!("Game Over");
         ad.animation_index = 5;
-        cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_millis(1500), TimerMode::Once), 6));       
+        cmd.entity(tr.target()).insert(NextAfter(Timer::new(Duration:: from_millis(1500), TimerMode::Once), 6));       
         next.set(GameStage::Over);
     } 
 
-    let h_per = 100. * (1. - (((damage.0 / MAX_HEALTH) * 100.).round() / 100.));
+    let h_per = 100. * (1. - (((damage.0 / hm.0) * 100.).round() / 100.));
     let (mut t, mut c) = health_ui_q.into_inner();
 
     t.0 = format!("Health: {h_per:.0}%");
