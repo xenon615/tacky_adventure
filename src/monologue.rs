@@ -1,7 +1,7 @@
-use std::{fs, time::Duration};
+use std::time::Duration;
 
 use bevy::{
-    color::palettes::css, ecs::query::QueryFilter, prelude::*
+    color::palettes::css, prelude::*
 };
 
 use crate::{
@@ -57,7 +57,7 @@ fn startup(
         Visibility::Hidden,
         BackgroundColor(css::BLACK.with_alpha(0.9).into()),
         BorderRadius::all(Val::Px(15.)),
-        BorderColor(css::WHITE.into()),
+        BorderColor::all(css::WHITE),
         children![
             (
                 Text::new("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -79,7 +79,7 @@ fn startup(
 // ---
 
 fn set_text(
-    tr: Trigger<SetMonologueText>,
+    tr: On<SetMonologueText>,
     ballon_q: Single<(Entity, &Children, &mut Visibility), With<Ballon>>,
     mut text_q: Query<&mut Text>,
     mut cmd: Commands
@@ -103,7 +103,7 @@ fn hide_ballon (
 ) {
     let (e, mut v, mut ht) = ballon_q.into_inner();
     ht.0.tick(time.delta());
-    if ht.0.finished() {
+    if ht.0.is_finished() {
         *v = Visibility::Hidden;
         cmd.entity(e).remove::<HideTime>();
     }

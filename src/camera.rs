@@ -5,20 +5,19 @@ use bevy::{
         common_conditions::input_pressed,
     },
     render::view::NoIndirectDrawing,
-    pbr::Atmosphere,
+    // pbr::Atmosphere,
     core_pipeline::{
         Skybox, 
-        motion_blur::MotionBlur
-        
     },
+    post_process::motion_blur::MotionBlur
     // pbr::Atmosphere
 };
 
-use avian3d::schedule::PhysicsSet;
+use avian3d::prelude::PhysicsSystems;
 // use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
-use crate::shared::Player;
-use crate::shared::GameStage;
+use crate::shared::{OptionIndex, Player};
+// use crate::shared::GameStage;
 
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
@@ -28,16 +27,17 @@ impl Plugin for CameraPlugin {
         .add_systems(Startup, setup)
         .add_systems(PostUpdate, 
             follow
-            .after(PhysicsSet::Sync)
-            .before(TransformSystem::TransformPropagate)
+            .after(PhysicsSystems::Writeback)
+            .before(TransformSystems::Propagate)
         )
         .add_systems(Update, mouse_drag
             .run_if(input_pressed(MouseButton::Left))
-            .run_if(on_event::<MouseMotion>)
+            .run_if(on_message::<MouseMotion>)
         )
-        .add_systems(Update, distancing.run_if(on_event::<MouseWheel>)) 
+        .add_systems(Update, distancing.run_if(on_message::<MouseWheel>)) 
         // .add_observer(cam_reset)   
-        .add_systems(Update, switch_state.run_if(state_changed::<GameStage>))
+        // .add_systems(Update, switch_state.run_if(state_changed::<GameStage>))
+            .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
         ; 
     }
 } 
@@ -49,7 +49,6 @@ pub struct Cam;
 
 #[derive(Event)]
 pub struct CamReset;
-
 
 #[derive(Resource)]
 pub struct CamFollowParams {
@@ -69,10 +68,7 @@ fn setup (
         Camera3d::default(),
         Transform::from_xyz(100., 0., 0.).looking_at(Vec3::ZERO, Vec3::Y),
         Cam,
-        Camera {
-            hdr: true,
-            ..default()
-        },
+        Camera::default(),
         // PanOrbitCamera::default(),
         NoIndirectDrawing
         
@@ -113,7 +109,7 @@ fn follow (
 
 #[allow(dead_code)]
 fn mouse_drag (
-    mut er: EventReader<MouseMotion>,
+    mut er: MessageReader<MouseMotion>,
     mut cam_param: ResMut<CamFollowParams>,
     time: Res<Time>,
 ) {
@@ -131,7 +127,7 @@ fn mouse_drag (
 
 #[allow(dead_code)]
 fn distancing (
-    mut er: EventReader<MouseWheel>,
+    mut er: MessageReader<MouseWheel>,
     mut cp: ResMut<CamFollowParams>
 ) {
     for e in er.read() {
@@ -144,7 +140,7 @@ fn distancing (
 
 #[allow(dead_code)]
 fn cam_reset(
-    _tr: Trigger<CamReset>,
+    _tr: On<CamReset>,
     mut cp: ResMut<CamFollowParams>
 ) {
     cp.tranlation_bias.x = 0.;
@@ -154,14 +150,14 @@ fn cam_reset(
 
 // ---
 
-fn switch_state(
+fn opt_index_changed (
     mut cmd: Commands,
     assets: ResMut<AssetServer> ,
     cam_q: Single<Entity, With<Cam>>,
-    state: Res<State<GameStage>>
+    opt_index: Res<OptionIndex>
 ) {
 
-    if *state != GameStage::Intro {
+    if opt_index.0 == 1 {
 
         let cam_e = cam_q.into_inner();
         cmd.entity(cam_e).insert((

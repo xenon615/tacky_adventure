@@ -1,6 +1,4 @@
-use bevy:: {
-    color::palettes::css, prelude::*
-};
+use bevy::prelude::*;
 
 
 pub struct UiPlugin;
@@ -58,7 +56,8 @@ pub fn startup(
                 ),
                 (
                     Node {width: Val::Percent(50.), justify_content:JustifyContent::Center, ..default()},
-                    UiSlot::TopRight
+                    UiSlot::TopRight,
+                    Name::new("TopRight")
                 )                
             ]
         ));
@@ -91,6 +90,7 @@ pub fn startup(
                 (
                     Node {width: Val::Percent(50.), justify_content:JustifyContent::Center, ..default()},
                     UiSlot::BottomRight
+
                 )                
             ]
         ));        

@@ -2,14 +2,15 @@ use bevy::prelude::*;
 
 use crate::help::SetHelpData;
 use crate::shared::Exit;
-use crate::{shared::{GameStage, SetMonologueText, Player}, ui::UiSlot};
+use crate::{shared::{OptionIndex,  SetMonologueText, Player}, ui::UiSlot};
 pub struct AimerPlugin;
 impl Plugin for AimerPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_systems(Startup, startup)
-        .add_systems(OnEnter(GameStage::Aimer), (init_ui, set_help))
-        .add_systems(Update, update_aimer)
+        .add_systems(Update, (init_ui, set_help).run_if(resource_added::<EnabledAimer>))
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
+        .add_systems(Update, update_aimer.run_if(resource_exists::<EnabledAimer>))
         ;
         
     }
@@ -22,6 +23,10 @@ pub struct AimerImageHandle(Handle<Image>);
 
 #[derive(Component)]
 pub struct ArrowYaw;
+
+#[derive(Resource)]
+pub struct EnabledAimer;
+
 
 // ---
 
@@ -43,13 +48,14 @@ fn init_ui(
         if *s == UiSlot::TopRight {
             let ch = cmd.spawn((
                 ArrowYaw,
-                ImageNode::new(ihr.0.clone())
+                ImageNode::new(ihr.0.clone()),
             ))
             .id()
             ;
             cmd.entity(e).add_child(ch);
         }
     }
+    cmd.insert_resource(EnabledAimer);
 }
 
 // ---
@@ -70,19 +76,31 @@ fn set_help(
 fn update_aimer(
     exit_q: Single<&Transform, (With<Exit>, Without<Player>, Without<ArrowYaw>)>,
     player_q: Single<&Transform, (With<Player>, Without<Exit>, Without<ArrowYaw>)>,
-    arrow_yaw_q: Single<&mut Transform, (With<ArrowYaw>, Without<Player>, Without<Exit>)>,
+    arrow_yaw_q: Single<&mut UiTransform, (With<ArrowYaw>, Without<Player>, Without<Exit>)>,
     time: Res<Time>
 ) {
     let exit_t = exit_q.into_inner();
     let player_t = player_q.into_inner();
     let mut arrow_yaw_t  = arrow_yaw_q.into_inner();
     let to_target = exit_t.translation - player_t.translation;
-
     let to_target_xz = to_target.normalize().reject_from_normalized(Vec3::Y);
     let forward_xz:Vec3 = player_t.forward().into();
-    
     let dot = to_target_xz.dot(forward_xz);
     let sign = to_target_xz.cross(forward_xz).y.signum();
     let angle = dot.acos() * sign;
-    arrow_yaw_t.rotation =  arrow_yaw_t.rotation.slerp(Quat::from_rotation_z(angle), time.delta_secs() * 0.5);
+    arrow_yaw_t.rotation =  arrow_yaw_t.rotation.nlerp(Rot2::radians(angle), time.delta_secs() * 0.5);
+ 
 }
+
+// --
+
+const OPTION_INDEX: usize = 3;
+
+fn opt_index_changed(
+    opt_index: Res<OptionIndex>,
+    mut cmd: Commands
+) {
+    if opt_index.0 == OPTION_INDEX {
+        cmd.insert_resource(EnabledAimer);
+    }
+} 

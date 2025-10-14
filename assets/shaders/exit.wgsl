@@ -4,7 +4,8 @@
 }
 
 // @group(2) @binding(0) var <uniform> base_color: vec4f;
-@group(2) @binding(1) var <uniform> stage_index: u32;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var <uniform> stage_index: u32;
+
 
 const ARM_COUNT =  3.0;
 const WHIRL = 14.0;

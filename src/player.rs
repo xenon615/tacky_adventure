@@ -9,10 +9,12 @@ use bevy::{
 use bevy_tnua::prelude::*;
 use bevy_tnua_avian3d::{*, TnuaAvian3dPlugin};
 
-use crate::{shared::{DamageCallback, DamageDeal, DamageDealed, HealthMax, Targetable}, ui::{self, UiSlot}};
+use crate::{
+    shared::{DamageCallback, DamageDeal, DamageDealed, GameState, HealthMax, NotReady, Targetable},
+    ui::{self, UiSlot}};
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
-use crate::shared:: {CastBuild, Damage, GameStage, Player, SetMonologueText};
+use crate::shared:: {CastBuild, Damage, Player, SetMonologueText};
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
@@ -31,7 +33,7 @@ impl Plugin for PlayerPlugin {
         ).in_set(TnuaUserControlsSystemSet))
         .add_systems(Update, timer.run_if(any_with_component::<NextAfter>))
         .add_observer(build_action)
-    
+        .add_systems(OnEnter(GameState::Game), enter_game)
         ;
     }
 }
@@ -59,11 +61,10 @@ fn startup(
     all_animations.add("Player", "models/player.glb", 7, &mut graphs, &asset);
     cmd.spawn((
         SceneRoot(asset.load(GltfAssetLabel::Scene(0).from_asset("models/player.glb"))),
-        Transform::from_xyz(0., 10., 4.)
-        .looking_to(-Vec3::Z, Vec3::Y),
+        Transform::from_xyz(0., 10., 4.).looking_to(-Vec3::Z, Vec3::Y),
         Player,
         Targetable,
-        AniData::new("Player", 1),
+        AniData::new("Player", 0),
         TnuaController::default(),
         TnuaAvian3dSensorShape(Collider::cylinder(0.49, 0.0)),
         RigidBody::Dynamic,
@@ -75,18 +76,28 @@ fn startup(
         HealthMax(100.),
         CollisionEventsEnabled,
         DamageDeal(1.),
-        DamageCallback
-
+        DamageCallback,
      ))
+     .insert(NotReady)
      .observe(on_ready)
      .observe(on_damage)
      ;
+    
 }
 
 // ---
 
 fn on_ready (
-    _: Trigger<SceneInstanceReady>,
+    tr: On<SceneInstanceReady>,
+    mut cmd: Commands
+) {
+    cmd.entity(tr.entity).remove::<NotReady>();
+    
+}
+
+// ---
+
+fn enter_game(
     mut cmd: Commands
 ) {
     cmd.trigger(SetMonologueText::new("Hi").with_time(20));
@@ -164,9 +175,6 @@ fn animate(
         return;
     };
     
-    if ad.animation_index == 4 {
-        return;
-    }
 
     let back = t.forward().dot(basis.effective_velocity().normalize()) < 0.;
 
@@ -186,7 +194,7 @@ fn animate(
 // ---
 
 fn build_action(
-    _tr: Trigger<CastBuild>,
+    _tr: On<CastBuild>,
     ad_q: Single<(Entity, &mut AniData), With<Player>>,
     mut cmd: Commands
  ) {
@@ -204,7 +212,7 @@ fn timer (
 ) {
     let (e, mut na, mut ad) = timer_q.into_inner();
     na.0.tick(time.delta());
-    if na.0.finished() {
+    if na.0.is_finished() {
         cmd.entity(e).remove::<NextAfter>();
         ad.animation_index = na.1;
     }
@@ -213,10 +221,10 @@ fn timer (
 // ---
 
 fn on_damage(
-    tr: Trigger<DamageDealed>,
+    tr: On<DamageDealed>,
     player_q: Single<(&mut AniData, &Damage, &HealthMax)>, 
     mut cmd: Commands,
-    mut next: ResMut<NextState<GameStage>>,
+    mut next: ResMut<NextState<GameState>>,
     health_ui_q: Single<(&mut Text, &mut TextColor), With<HealthUI>>
 ) {
     let (mut ad, damage, hm) = player_q.into_inner();
@@ -224,8 +232,8 @@ fn on_damage(
     if hm.0 - damage.0 <= 0. {
         info!("Game Over");
         ad.animation_index = 5;
-        cmd.entity(tr.target()).insert(NextAfter(Timer::new(Duration:: from_millis(1500), TimerMode::Once), 6));       
-        next.set(GameStage::Over);
+        cmd.entity(tr.entity).insert(NextAfter(Timer::new(Duration:: from_millis(1500), TimerMode::Once), 6));       
+        next.set(GameState::Over);
     } 
 
     let h_per = 100. * (1. - (((damage.0 / hm.0) * 100.).round() / 100.));

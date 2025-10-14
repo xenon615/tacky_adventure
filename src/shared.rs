@@ -3,16 +3,15 @@ use avian3d::prelude::*;
 use std::ops::Range;
 
 
+#[derive(Component)]
+pub struct NotReady;
+
 #[derive(Event)]
 pub struct CastBuild;
-
-
 
 #[derive(Component)]
 pub struct Player;
 
-// #[derive(Event)]
-// pub struct SetDamage(pub f32);
 
 #[derive(Event, Debug)]
 pub struct Shot {
@@ -36,8 +35,10 @@ pub struct DamageDeal(pub f32);
 #[derive(Component)]
 pub struct DamageCallback;
 
-#[derive(Event)]
-pub struct DamageDealed;
+#[derive(EntityEvent)]
+pub struct DamageDealed{pub entity: Entity}
+
+
 
 #[derive(Component)]
 #[require(Damage)]
@@ -53,12 +54,11 @@ pub struct Targetable;
 #[derive(Component)]
 pub struct LifeTime(pub Timer);
 
-
-
 #[derive(Event)]
-pub struct SetMonologueText<'a>{pub text: &'a str, pub time: u64}
-impl <'a>SetMonologueText<'a>  {
-    pub fn new(text: &'a str) -> Self {
+pub struct SetMonologueText{pub text: &'static str, pub time: u64}
+
+impl SetMonologueText  {
+    pub fn new(text: &'static str) -> Self {
         Self { text , time: 5 }
     }
 
@@ -68,46 +68,21 @@ impl <'a>SetMonologueText<'a>  {
     }
 }
 
+
+// --
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
-pub enum GameStage {
+pub enum GameState {
     #[default]            
-    Intro,
-    Build,
-    Lift,
-    Aimer,
-    Eye,
-    Virus,
+    Loading,
+    Game,
     Over
 }
 
-impl GameStage {
-    pub fn get_index_by_state(s: &Self) -> u32{
-        match s {
-            Self::Intro => 0,
-            Self::Build => 1,
-            Self::Lift => 2,
-            Self::Aimer => 3,
-            Self::Eye => 4,
-            Self::Virus => 5,
-            Self::Over => 6
-        }
-    }
+#[derive(Resource, Default)]
+pub struct OptionIndex(pub usize);
 
-    pub fn get_state_by_index(index: u32) -> GameStage{
-        match index {
-            0 => Self::Intro,
-            1 => Self::Build,
-            2 => Self::Lift,
-            3 => Self::Aimer,
-            4 => Self::Eye,
-            5 => Self::Virus,
-            6 => Self::Over,
-            _ => Self::Intro
-        }
-
-    }
-
-}
+// --
 
 pub const PLATFORM_DIM: Vec3 = Vec3::new(10., 0.1, 10.);
 
@@ -127,7 +102,7 @@ pub fn get_platform(pt: &Transform, raycast_q: &SpatialQuery) -> Option<RayHitDa
 }
 
 // ---
-
+#[allow(dead_code)]
 pub fn fibonacci_sphere(count: usize) -> impl Iterator<Item = Vec3> {
     let phi = std::f32::consts::PI * (5.0_f32.sqrt() - 1.);
     (0 .. count).map(move |i| {
@@ -142,6 +117,7 @@ pub fn fibonacci_sphere(count: usize) -> impl Iterator<Item = Vec3> {
 
 // ---
 
+#[allow(dead_code)]
 pub fn closest (verticis: &mut Vec<[f32; 3]>, p: Vec3, scale: f32 ) {
     if let Some(i) = verticis
         .iter()
@@ -158,6 +134,8 @@ pub fn closest (verticis: &mut Vec<[f32; 3]>, p: Vec3, scale: f32 ) {
         });                
     }
 }
+
+// ---
 
 pub fn vec_rnd(rx: Range<i32>, ry: Range<i32>, rz: Range<i32>) -> Vec3{
     Vec3::new(

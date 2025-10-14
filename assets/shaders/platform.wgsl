@@ -4,8 +4,8 @@
     forward_io::VertexOutput,
 }
 
-@group(2) @binding(0) var <uniform> base_color: vec4f;
-@group(2) @binding(1) var <uniform> stage_index: u32;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var <uniform> base_color: vec4f;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var <uniform> stage_index: u32;
 
 fn palette(t: f32) ->  vec3f {
     let a = vec3f(0.5, 0.5, 0.5);

@@ -3,14 +3,13 @@ use bevy:: {
     color::palettes::css
 };
 
-use crate::{shared::GameStage, ui::UiSlot};
+use crate::ui::UiSlot;
 pub struct HelpPlugin;
 impl Plugin for HelpPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_systems(Update, toggle_help
             .run_if(resource_changed::<ButtonInput<KeyCode>>)
-            .run_if(not(in_state(GameStage::Intro)))
         )
         .add_observer(init)
         ;
@@ -20,10 +19,10 @@ impl Plugin for HelpPlugin {
 // ---
 
 #[derive(Event)]
-pub struct SetHelpData<'a> {
-    pub title: &'a str,
-    pub keys: &'a str,
-    pub hint:&'a str 
+pub struct SetHelpData {
+    pub title: &'static str,
+    pub keys: &'static str,
+    pub hint:&'static str 
 }
 
 // ---
@@ -34,7 +33,7 @@ pub struct HelpWidget;
 // ---
 
 fn init (
-    tr: Trigger<SetHelpData>,
+    tr: On<SetHelpData>,
     mut cmd: Commands,
     slots_q: Query<(Entity, &UiSlot)>,
     help_q: Option<Single<Entity, With<HelpWidget>>>
@@ -67,7 +66,7 @@ fn init (
                             ..default()
                         },
                         children![
-                            Text::new("Alt + H: Help"),
+                            Text::new("Alt + H: Toggle Help"),
                         ],
                         
                         

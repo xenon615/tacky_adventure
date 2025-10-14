@@ -1,11 +1,12 @@
 use bevy::{
     pbr::Material, 
     prelude::*, 
-    render::render_resource::{AsBindGroup, ShaderRef},
+    render::render_resource::AsBindGroup,
+    shader::ShaderRef,
     color::palettes::css
 };
 
-use crate::shared::{vec_rnd, GameStage, Player, SetMonologueText, Shot, Target, TargetedBy, Threat};
+use crate::shared::{vec_rnd, OptionIndex, Player, SetMonologueText, Shot, Target, TargetedBy, Threat};
 
 // ---
 
@@ -14,18 +15,19 @@ impl Plugin for EyesPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_plugins(MaterialPlugin::<EyeMaterial>::default())
-        .add_systems(OnEnter(GameStage::Build), (startup, set_help))
         .add_systems(Update, (
             // gizmos,
             change_mode, 
             change_color,
             moving, 
-            detect_threat
-            .run_if(any_with_component::<Threat>),
+            detect_threat.run_if(any_with_component::<Threat>),
             check_ammo_load.run_if(any_with_component::<PrepareToShot>),
             aiming.run_if(any_with_component::<Target>)
         ).run_if(resource_exists::<EnabledEyes>)) 
         .add_systems(Update, check_blink.run_if(any_with_component::<Blinking>))
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
+        .add_systems(Update, (startup, set_help).run_if(resource_added::<EnabledEyes>))
+
         ;
     }
 } 
@@ -70,10 +72,10 @@ pub enum EyeMode {
     Defence,
 }
 
-const EYES_COUNT: i8 = 3; 
+const EYES_COUNT: i8 = 9; 
 const ESCORT_RELATIVE: Vec3 = Vec3::new(0., 5., 20.);
 const ESCORT_SQUARE_TRESHOLD: f32 = 9.;
-const BASE_VELOCITY: f32 = 1.;
+const BASE_VELOCITY: f32 = 5.;
 const ANGLE_STEP: f32 = 360. / (EYES_COUNT as f32);
 const DETECT_RANGE_SQUARED: f32  = 100.0 * 100.0;
 const AMMO_LOAD_TIME: f32 = 2.;
@@ -194,7 +196,6 @@ fn change_color(
     }
 }
 
-
 // ---
 
 fn calc_desired(idx: u8, target: Vec3) -> Vec3{
@@ -237,19 +238,19 @@ fn detect_threat(
     if eyes_q.is_empty() {
         return;
     }
-    let mut assigned = vec![];
+
     for (threat_e, threat_t, mut threat_tb) in threat_q.iter_mut() {
-        if threat_tb.0.len() == 2 {
-            continue;
-        }
         for (eye_e, eye_t, mut eye_mode) in &mut eyes_q {
             if *eye_mode == EyeMode::Defence {
                 continue;
             }
+            if threat_tb.0.len() > 1 {
+                continue;
+            }
+
             if eye_t.translation.distance_squared(threat_t.translation) <= DETECT_RANGE_SQUARED {
                 *eye_mode = EyeMode::Defence;
                 cmd.entity(eye_e).insert(Target(threat_e));
-                assigned.push(threat_e);
                 threat_tb.0.push(eye_e);
             } 
         }
@@ -277,7 +278,7 @@ fn aiming(
 
         t.rotation = t.rotation.slerp(t.looking_at(target_t.translation, Vec3::Y).rotation, time.delta_secs() * 5.);
         let to_target = (target_t.translation - t.translation).normalize();
-        if t.forward().dot(to_target) > 0.95 {
+        if t.forward().dot(to_target) > 0.98 {
             if opsh.is_none() {
                 cmd.trigger(Shot{direction: t.forward(), position: t.translation + t.forward() * 2.});
                 cmd.entity(e).insert(PrepareToShot(Timer::from_seconds(AMMO_LOAD_TIME, TimerMode::Once)));
@@ -289,11 +290,10 @@ fn aiming(
 // ---
 
 fn loose_target(
-    tr: Trigger<OnRemove, Target>,
+    tr: On<Remove, Target>,
     mut em_q: Query<&mut EyeMode>
-    
 ) -> Result {
-    let mut em = em_q.get_mut(tr.target())?;
+    let mut em = em_q.get_mut(tr.entity)?;
     *em = EyeMode::Idle;
     Ok(())
 }
@@ -340,7 +340,7 @@ fn check_blink(
 ) {
     for (e, mh, mut b) in blink_q {
         b.0.tick(time.delta());
-        if b.0.finished() {
+        if b.0.is_finished() {
             cmd.entity(e).remove::<Blinking>();
             let Some(m) = cmats.get_mut(mh) else {continue;};
             m.blink = 0;        
@@ -357,7 +357,7 @@ fn check_ammo_load (
 ) {
     for (e, mut l) in &mut lt_q {
         l.0.tick(time.delta());
-        if l.0.finished() {
+        if l.0.is_finished() {
             cmd.entity(e).remove::<PrepareToShot>();
         }
     }
@@ -371,3 +371,16 @@ fn set_help(
 ) {
     cmd.trigger(SetMonologueText::new("What the hell is this? Are these guys going to attack me or help me? I don't know yet."));
 }
+
+// ---
+
+const OPTION_INDEX: usize = 2;
+
+fn opt_index_changed(
+    opt_index: Res<OptionIndex>,
+    mut cmd: Commands
+) {
+    if opt_index.0 == OPTION_INDEX {
+        cmd.insert_resource(EnabledEyes);
+    }
+} 

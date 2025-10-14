@@ -1,27 +1,29 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
 
-use crate::shared::{Damage, DamageCallback, DamageDeal, DamageDealed, HealthMax};
+use crate::shared::{Damage, DamageCallback, DamageDeal, DamageDealed, HealthMax, Targetable, Target};
 
 pub struct DamagePlugin;
 impl Plugin for DamagePlugin {
     fn build(&self, app: &mut App) {
         app
         .add_observer(on_collision)
+        .add_observer(clear_targets)
         ;
     }
 }
 
 fn on_collision(
-    tr: Trigger<OnCollisionStart>,
+    tr: On<CollisionStart>,
     mut damageable_q: Query<(&mut Damage, &HealthMax, Option<&DamageCallback>)>,
     dd_q: Query<&DamageDeal>,
     // name_q: Query<&Name>,
     mut cmd: Commands
 ) {
-    let Some(other)  = tr.body else {return;};
+    let Some(other)  = tr.body2 else {return;};
+    let Some(me) = tr.body1 else {return;};
 
-    let me = tr.target();
+
     // let def = Name::new("Unknown");
     // let me_name = name_q.get(me).unwrap_or(&def);
     // let other_name = name_q.get(other).unwrap_or(&def);
@@ -35,10 +37,10 @@ fn on_collision(
 
     damage.0 += dd.0;
     if c_o.is_some() {
-        cmd.trigger_targets(DamageDealed, other);
+        cmd.trigger(DamageDealed{entity: other});
     } else {
         if health_max.0 - damage.0 <= 0. {
-            cmd.entity(other).despawn();
+            cmd.entity(other).try_despawn();
         } 
 
     }
@@ -47,4 +49,18 @@ fn on_collision(
         
 }
 
+// --
 
+fn clear_targets(
+    tr: On<Remove, Targetable>,
+    q: Query<(Entity, &Target)>,
+    mut cmd: Commands
+) {
+    let e = tr.entity;
+    for (et, t) in &q {
+        if t.0 == e {
+            cmd.entity(et).remove::<Target>();
+        } 
+
+    }
+}  

@@ -1,14 +1,15 @@
 use bevy::{
-    ecs::world, gizmos, pbr::Material, prelude::*, render::{
-        render_resource::{AsBindGroup, ShaderRef}, 
-        view::VisibilityClass
-    }
+    // gizmos, 
+    pbr::Material, prelude::*, render::{
+        render_resource::AsBindGroup, 
+    },
+    shader::ShaderRef
 };
 use avian3d::{math::Quaternion, prelude::*};
 
 use crate::{
     help::SetHelpData,
-    shared::{CastBuild, Exit, GameStage, Player, PLATFORM_DIM, get_platform, SetMonologueText}
+    shared::{get_platform, CastBuild, Exit, OptionIndex,  Player, SetMonologueText, PLATFORM_DIM}
 };
 
 pub struct PlatformPlugin;
@@ -17,13 +18,15 @@ impl Plugin for PlatformPlugin {
         app
         .add_plugins(MaterialPlugin::<PlatformMaterial>::default())
         .add_systems(Startup, startup)
-        .add_systems(OnEnter(GameStage::Build), (change_color, set_help).chain())
+        .add_systems(Update, (change_color, set_help).chain().run_if(resource_added::<EnabledBuild>))
         .add_systems(
             Update, build_single.run_if(
-                not(in_state(GameStage::Intro))
+                resource_exists::<EnabledBuild>
                 .and(resource_changed::<ButtonInput<KeyCode>>)
             )
         )
+        // .add_observer(opt_enable)
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
         ;
     }
 }
@@ -44,8 +47,7 @@ pub struct PlatformMaterial {
 
 impl Material for PlatformMaterial {
     fn fragment_shader() -> ShaderRef {
-        // "shaders/platform.wgsl".into()
-        "shaders/platform.wgsl".into()
+         "shaders/platform.wgsl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {
@@ -60,6 +62,10 @@ pub struct Platform;
 
 #[derive(Resource)]
 pub struct PlatformMaterialHandle(Handle<PlatformMaterial>);
+
+#[derive(Resource)]
+struct EnabledBuild;
+
 
 // ---
 
@@ -82,13 +88,13 @@ fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<PlatformMaterial>>,
-    stage: Res<State<GameStage>>
+    
 ) {
 
     let mesh = meshes.add(Cuboid::from_size(PLATFORM_DIM));
     let material = materials.add(PlatformMaterial {
         color: Color::srgba (0., 0., 1., 0.1).into(), 
-        stage_index:GameStage::get_index_by_state(&stage) 
+        stage_index: 0 
     }); 
     cmd.insert_resource(PlatformMaterialHandle(material.clone()));
 
@@ -141,7 +147,7 @@ fn build_single(
     if build_action == BuildAction::None {
         return;
     }
-    println!("B - Action {:?}", build_action);
+    // println!("B - Action {:?}", build_action);
     let _le = build_platform(&mut cmd, &spatial, platform_e, player_t.forward(), build_action, trans_q);
    
     cmd.trigger(CastBuild);
@@ -199,9 +205,7 @@ fn build_platform(
             return;
         }
         cmd.entity(platform_e)
-        .clone_and_spawn_with(|b| {
-            b.deny::<VisibilityClass>();
-        })
+        .clone_and_spawn()
         .insert((   
             Position::new(pos),
             Rotation(rotation)
@@ -239,3 +243,24 @@ fn set_help(
     cmd.trigger(SetMonologueText::new("Platform Builder is available, check out the help"));
 }
 
+// --
+
+// fn opt_enable(
+//     tr: On<EnableOption>,
+//     mut cmd: Commands
+// ) {
+//     if tr.event().0 == "Build".to_string() {
+//         cmd.insert_resource(EnabledBuild);
+//     }
+// } 
+
+const OPTION_INDEX: usize = 1;
+
+fn opt_index_changed(
+    opt_index: Res<OptionIndex>,
+    mut cmd: Commands
+) {
+    if opt_index.0 == OPTION_INDEX {
+        cmd.insert_resource(EnabledBuild);
+    }
+} 

@@ -1,6 +1,11 @@
-use bevy::{math::VectorSpace, prelude::*};
+use bevy::{
+    // prelude::*
+    prelude::default,
+    math::{Vec3, Vec4}
+};
 use bevy_hanabi::prelude::*;
 
+#[allow(dead_code)]
 pub fn steam() -> EffectAsset{
     let writer = ExprWriter::new();
     let init_pos = SetAttributeModifier::new(
@@ -72,8 +77,8 @@ pub fn jet_stream() -> EffectAsset{
     let render_color = ColorOverLifetimeModifier::new(Gradient::from_keys(
         vec![
             (0.0, Vec4::new(2., 2., 2., 1.)),
-            (0.3, Vec4::new(2., 2., 0., 1.)),
-            (0.5, Vec4::new(0.3, 5.0, 0.0, 0.0))
+            (0.3, Vec4::new(3., 0., 0., 0.1)),
+            (0.5, Vec4::new(3., 0.0, 0.0, 0.0))
         ]
     ));
     
@@ -81,7 +86,7 @@ pub fn jet_stream() -> EffectAsset{
         gradient: Gradient::from_keys(vec![
             (0.0, Vec3::splat(1.0)),
             (0.5, Vec3::splat(0.9)),
-            (1., Vec3::splat(0.))
+            (1., Vec3::splat(0.1))
         ]),
         screen_space_size:false
     };
@@ -143,8 +148,7 @@ pub fn blast () -> EffectAsset {
             vec![
                 (0.0, Vec4::new(2., 2., 2., 1.)),
                 (0.05, Vec4::new(2., 0., 0., 1.)),
-                (0.1, Vec4::new(0.0, 10.0, 0.0, 0.1)),
-                (0.2, Vec4::new(10.0, 0.0, 0.0, 0.1))
+                (0.1, Vec4::new(10.0, 0.0, 0.0, 0.1)),
             ]
         )
     );
@@ -163,7 +167,7 @@ pub fn blast () -> EffectAsset {
 
     let init_lifetime = SetAttributeModifier::new(
         Attribute::LIFETIME,
-        writer.lit(0.2).expr()
+        writer.lit(0.1).expr()
     );
 
     let init_pos = SetPositionSphereModifier {

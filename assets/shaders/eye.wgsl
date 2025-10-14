@@ -2,8 +2,8 @@
 // #import "shaders/inc/functions.wgsl"::fresnel;
 // #import bevy_render::color_operations::hsv_to_rgb;
 
-@group(2) @binding(0) var <uniform> eye_color: vec4f;
-@group(2) @binding(1) var <uniform> eye_blink: i32;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var <uniform> eye_color: vec4f;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var <uniform> eye_blink: i32;
 
 //  ---
 

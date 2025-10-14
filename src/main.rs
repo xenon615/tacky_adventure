@@ -11,21 +11,25 @@ use avian3d::{
     // debug_render::PhysicsDebugPlugin
 };
 
-use crate::shared::{GameStage, Targetable, Target};
+use crate::shared::{
+    GameState,
+    NotReady,
+    OptionIndex
+};
 
 mod shared;
 mod camera;
 mod env;
-mod eye;
-mod player;
 // mod city;
-mod platform;
-mod lift;
 mod ui;
-mod effects;
+mod player;
+mod platform;
 mod exit;
 mod monologue;
 mod help;
+// mod lift;
+mod eye;
+mod effects;
 mod aimer;
 mod virus;
 mod missile;
@@ -41,44 +45,42 @@ fn main() {
         HanabiPlugin,
         camera::CameraPlugin,
         env::EnvPlugin,
-        eye::EyesPlugin,
+
     ))
     .add_plugins((
+        ui::UiPlugin,
         player::PlayerPlugin,
         platform::PlatformPlugin,
-        lift::LiftPlugin,
-        ui::UiPlugin,
         exit::ExitPlugin,
         monologue::MonologuePlugin,
         help:: HelpPlugin,
+        eye::EyesPlugin,
+        // lift::LiftPlugin,
+
         aimer::AimerPlugin,
         virus::VirusPlugin,
         missile::MissilePlugin,
         damage::DamagePlugin
     ))
-    // .add_plugins((
-        
-    //     PhysicsDebugPlugin::default(),
-    // ))
+    // .add_plugins(PhysicsDebugPlugin::default())
     .add_plugins(EguiPlugin::default() )
     .add_plugins(WorldInspectorPlugin::new())
-    .init_state::<GameStage>()
-    .add_observer(clear_targets)
+    .init_state::<GameState>()
+    .init_resource::<OptionIndex>()
+    .add_systems(Update, check_ready.run_if(in_state(GameState::Loading)))
+    
     .run()
     ;
 }
 
+// ---
 
-fn clear_targets(
-    tr: Trigger<OnRemove, Targetable>,
-    q: Query<(Entity, &Target)>,
-    mut cmd: Commands
+fn check_ready(
+    not_ready_q: Query<&NotReady>,
+    mut next: ResMut<NextState<GameState>>     
 ) {
-    let e = tr.target();
-    for (et, t) in &q {
-        if t.0 == e {
-            cmd.entity(et).remove::<Target>();
-        } 
-
+    if not_ready_q.is_empty() {
+        next.set(GameState::Game);
     }
-}  
+}
+

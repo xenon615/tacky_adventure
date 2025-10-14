@@ -38,16 +38,16 @@ const FORCE_DOWN: f32 = 25.;
 // ---
 
 fn move_lift(
-    lift_q: Single<&mut ExternalForce, With<Lift>>,
+    lift_q: Single<&mut ConstantForce, With<Lift>>,
     keys: Res<ButtonInput<KeyCode>>
 ) {
     let mut ef = lift_q.into_inner();
     if keys.just_pressed(KeyCode::NumpadAdd) {
-        ef.set_force(Vec3::Y * FORCE_UP);
+        ef.0 = Vec3::Y * FORCE_UP;
     }
 
     if keys.just_pressed(KeyCode::NumpadSubtract) {
-        ef.set_force(Vec3::Y * FORCE_DOWN);
+        ef.0  = Vec3::Y * FORCE_DOWN;
     }
 }
 
@@ -98,7 +98,7 @@ fn switch_lift(
         cmd.entity(l_e).remove_children(&[ee]);
         cmd.entity(l_e)
         .insert(RigidBody::Static)
-        .remove::<(LockedAxes, Friction, LinearDamping, ExternalForce, Lift)>();            
+        .remove::<(LockedAxes, Friction, LinearDamping, ConstantForce, Lift)>();            
     }
 
     if !switch_off {
@@ -108,7 +108,7 @@ fn switch_lift(
             LockedAxes::ALL_LOCKED.unlock_translation_y(),
             Friction::new(0.0).with_combine_rule(CoefficientCombine::Min),
             LinearDamping(2.),
-            ExternalForce::new(Vec3::Y * FORCE_UP).with_persistence(true),
+            ConstantForce(Vec3::Y * FORCE_UP),
             Lift 
         )).add_child(ee);
 

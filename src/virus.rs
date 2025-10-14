@@ -1,30 +1,29 @@
 use bevy:: {
-    color, log::tracing_subscriber::fmt::time, math::VectorSpace, pbr::Material, prelude::*, render::{
-        mesh::{SphereKind, VertexAttributeValues}, render_resource::{AsBindGroup, ShaderRef},
-        view::VisibilityClass,
-    }, time::common_conditions::on_timer
+    pbr::Material, prelude::*, render::render_resource::AsBindGroup, 
+    mesh::VertexAttributeValues, 
+    shader::ShaderRef,
+    time::common_conditions::on_timer,
 };
 
 use avian3d::prelude::*;
 use std::{ops::{Add, Mul}, time::Duration};
-use crate::shared::{vec_rnd, DamageDeal, HealthMax, Player, Threat};
+use crate::shared::{vec_rnd, DamageDeal, HealthMax, Player, Threat, GameState, OptionIndex};
 
-use crate::shared::{GameStage, fibonacci_sphere, closest, SetMonologueText, Targetable};
+use crate::shared::{fibonacci_sphere, closest, SetMonologueText, Targetable};
 
 pub struct VirusPlugin;
 impl Plugin for VirusPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_plugins(MaterialPlugin::<VirusMaterial>::default())
-        .add_systems(OnEnter(GameStage::Build), startup)
-        .add_systems(Update, chase
-            .run_if(resource_exists::<EnabledVirus>)
-        )
+        .add_systems(Update, startup.run_if(resource_added::<EnabledVirus>))
+        .add_systems(Update, chase.run_if(resource_exists::<EnabledVirus>)        )
         .add_systems(Update, spawn_next
-            .run_if(on_timer(Duration::from_secs(10)))
+            .run_if(on_timer(Duration::from_secs(5)))
             .run_if(resource_exists::<EnabledVirus>)
         )
-        .add_systems(OnEnter(GameStage::Over), | mut cmd: Commands | cmd.remove_resource::<EnabledVirus>() )
+        .add_systems(OnEnter(GameState::Over), | mut cmd: Commands | cmd.remove_resource::<EnabledVirus>() )
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
         ;
     }
 }
@@ -35,13 +34,11 @@ impl Plugin for VirusPlugin {
 pub struct VirusMaterial {
     #[uniform(0)]
     color: LinearRgba,
-    #[uniform(1)]
-    stage_index: u32
 }
 
 impl Material for VirusMaterial {
     fn fragment_shader() -> ShaderRef {
-        "shaders/platform.wgsl".into()
+        "shaders/virus.wgsl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {
@@ -68,17 +65,18 @@ pub struct EnabledVirus;
 // ---
 
 const DAMAGE_VALUE: f32 = 1.;
-const MAX_HEALTH: f32 = 10.;
+const MAX_HEALTH: f32 = 1.;
 
 // ---
 
 fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>
+    // mut materials: ResMut<Assets<StandardMaterial>>
+    mut materials: ResMut<Assets<VirusMaterial>>
 ) {
 
-    let mut mesh =  Mesh::from(Sphere::new(1.).mesh().kind(SphereKind::Ico { subdivisions: 6 }));
+    let mut mesh = Sphere::new(1.).mesh().ico(6).unwrap();
     let Some(VertexAttributeValues::Float32x3(verticis)) = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION) else {
         return;
     };
@@ -92,7 +90,7 @@ fn startup(
     cmd.spawn((
         Transform::from_xyz(4., 2., 0.),
         Mesh3d(meshes.add(mesh)),
-        MeshMaterial3d(materials.add(Color::hsl(250., 1., 0.5))),
+        MeshMaterial3d(materials.add(VirusMaterial{color: Color::hsl(250., 1., 0.5).into()})),
         RigidBody::Kinematic,
         ColliderConstructor::TrimeshFromMesh,
         AngularVelocity(Vec3::new(1., 1., 1.)),
@@ -133,17 +131,28 @@ fn spawn_next(
     let ve = v_q.into_inner();
 
     cmd.entity(ve)
-    .clone_and_spawn_with(|b| {
-        b.deny::<VisibilityClass>();
-    })
+    .clone_and_spawn()
     .insert((
         Virus,
         Visibility::Visible,   
-        Position::new(vec_rnd(100 .. 200, 5 .. 50, 100 .. 200)),
+        Position::new(vec_rnd(-80 .. 80, 5 .. 50, -80 .. 80)),
         LinearVelocity(Vec3::Y),
         Targetable,
-        HealthMax(1.),
-        DamageDeal(1.)
+        HealthMax(MAX_HEALTH),
+        DamageDeal(DAMAGE_VALUE)
     ))
     ;
 }
+
+// ---
+
+const OPTION_INDEX: usize = 3;
+
+fn opt_index_changed(
+    opt_index: Res<OptionIndex>,
+    mut cmd: Commands
+) {
+    if opt_index.0 == OPTION_INDEX {
+        cmd.insert_resource(EnabledVirus);
+    }
+} 
