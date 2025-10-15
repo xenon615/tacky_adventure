@@ -27,7 +27,7 @@ mod platform;
 mod exit;
 mod monologue;
 mod help;
-// mod lift;
+mod lift;
 mod eye;
 mod effects;
 mod aimer;
@@ -55,7 +55,7 @@ fn main() {
         monologue::MonologuePlugin,
         help:: HelpPlugin,
         eye::EyesPlugin,
-        // lift::LiftPlugin,
+        lift::LiftPlugin,
 
         aimer::AimerPlugin,
         virus::VirusPlugin,

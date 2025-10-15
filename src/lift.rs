@@ -7,7 +7,7 @@ use crate:: {
     effects::steam, 
     help::SetHelpData, 
 
-    shared::{get_platform, GameStage,  Player, SetMonologueText}
+    shared::{get_platform, OptionIndex,  Player, SetMonologueText}
 };
 
 
@@ -18,8 +18,12 @@ impl Plugin for LiftPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_systems(Update, move_lift.run_if(any_with_component::<Lift>))
-        .add_systems(OnEnter(GameStage::Lift), (prepare_effect, set_help))
-        .add_systems(Update, switch_lift.run_if(input_just_pressed(KeyCode::KeyL)))
+        .add_systems(Update, (prepare_effect, set_help).run_if(resource_added::<EnabledLift>))
+        .add_systems(Update, opt_index_changed)
+        .add_systems(Update, switch_lift
+            .run_if(input_just_pressed(KeyCode::KeyL))
+            .run_if(resource_exists::<EnabledLift>)
+        )
         ;
     }
 }
@@ -31,6 +35,9 @@ struct Lift;
 
 #[derive(Component)]
 struct LiftEffect;
+
+#[derive(Resource)]
+struct EnabledLift;
 
 const FORCE_UP: f32 = 150.;
 const FORCE_DOWN: f32 = 25.;
@@ -129,3 +136,15 @@ fn set_help(
     });
     cmd.trigger(SetMonologueText::new("Lift is available, check out the help"));
 }
+
+
+const OPTION_INDEX: usize = 2;
+
+fn opt_index_changed(
+    opt_index: Res<OptionIndex>,
+    mut cmd: Commands
+) {
+    if opt_index.0 == OPTION_INDEX {
+        cmd.insert_resource(EnabledLift);
+    }
+} 

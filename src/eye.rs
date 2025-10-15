@@ -374,7 +374,7 @@ fn set_help(
 
 // ---
 
-const OPTION_INDEX: usize = 2;
+const OPTION_INDEX: usize = 3;
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,

@@ -147,7 +147,7 @@ fn build_single(
     if build_action == BuildAction::None {
         return;
     }
-    // println!("B - Action {:?}", build_action);
+
     let _le = build_platform(&mut cmd, &spatial, platform_e, player_t.forward(), build_action, trans_q);
    
     cmd.trigger(CastBuild);
@@ -244,15 +244,6 @@ fn set_help(
 }
 
 // --
-
-// fn opt_enable(
-//     tr: On<EnableOption>,
-//     mut cmd: Commands
-// ) {
-//     if tr.event().0 == "Build".to_string() {
-//         cmd.insert_resource(EnabledBuild);
-//     }
-// } 
 
 const OPTION_INDEX: usize = 1;
 

@@ -319,8 +319,9 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "avian3d"
-version = "0.4.0-dev"
-source = "git+https://github.com/Jondolf/avian?branch=main#555c737d0e41e2c6ac10367538860db918f8c335"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56ce9b78f7af428b9c74f95f5e1bca4ffeae0e0e70e7a3b256bd606b77d6031e"
 dependencies = [
  "approx",
  "avian_derive",
@@ -329,7 +330,7 @@ dependencies = [
  "bevy_math",
  "bevy_transform_interpolation",
  "bitflags 2.9.4",
- "derive_more 2.0.1",
+ "derive_more",
  "disqualified",
  "glam_matrix_extras",
  "itertools 0.13.0",
@@ -345,7 +346,8 @@ dependencies = [
 [[package]]
 name = "avian_derive"
 version = "0.2.2"
-source = "git+https://github.com/Jondolf/avian?branch=main#555c737d0e41e2c6ac10367538860db918f8c335"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12b257f601a1535e0d4a7a7796f535e3a13de62fd422b16dff7c14d27f0d4048"
 dependencies = [
  "proc-macro-error2",
  "proc-macro2",
@@ -426,19 +428,20 @@ dependencies = [
 
 [[package]]
 name = "bevy-tnua"
-version = "0.25.0-rc"
-source = "git+https://github.com/janhohenheim/bevy-tnua?branch=bevy-0.17.0-dev#7e1fa859a1d2ff2854800531c05f6de2fb34890b"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eab78782a624f66db0ab3c5153bd01facfc250a53452ea3cde968bda3e7e24bf"
 dependencies = [
  "bevy",
  "bevy-tnua-physics-integration-layer",
- "derive_more 1.0.0",
  "thiserror 2.0.17",
 ]
 
 [[package]]
 name = "bevy-tnua-avian3d"
-version = "0.6.0-rc"
-source = "git+https://github.com/janhohenheim/bevy-tnua?branch=bevy-0.17.0-dev#7e1fa859a1d2ff2854800531c05f6de2fb34890b"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56befd990005c4fd29512ffbe2cc0e1fbe809087fdeca4437f96e9c30eff77bf"
 dependencies = [
  "avian3d",
  "bevy",
@@ -447,8 +450,9 @@ dependencies = [
 
 [[package]]
 name = "bevy-tnua-physics-integration-layer"
-version = "0.9.0-rc"
-source = "git+https://github.com/janhohenheim/bevy-tnua?branch=bevy-0.17.0-dev#7e1fa859a1d2ff2854800531c05f6de2fb34890b"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cb6de3b2578e2c823e0a6bdbeb44b57a62697e72699ec06a6c1fcf800bbd332"
 dependencies = [
  "bevy",
 ]
@@ -495,7 +499,7 @@ dependencies = [
  "bevy_transform",
  "bevy_utils",
  "blake3",
- "derive_more 2.0.1",
+ "derive_more",
  "downcast-rs",
  "either",
  "petgraph",
@@ -563,7 +567,7 @@ dependencies = [
  "bitflags 2.9.4",
  "blake3",
  "crossbeam-channel",
- "derive_more 2.0.1",
+ "derive_more",
  "disqualified",
  "downcast-rs",
  "either",
@@ -612,7 +616,7 @@ dependencies = [
  "bevy_transform",
  "bevy_utils",
  "bevy_window",
- "derive_more 2.0.1",
+ "derive_more",
  "downcast-rs",
  "serde",
  "smallvec",
@@ -629,7 +633,7 @@ dependencies = [
  "bevy_math",
  "bevy_reflect",
  "bytemuck",
- "derive_more 2.0.1",
+ "derive_more",
  "encase",
  "serde",
  "thiserror 2.0.17",
@@ -718,7 +722,7 @@ dependencies = [
  "bitflags 2.9.4",
  "bumpalo",
  "concurrent-queue",
- "derive_more 2.0.1",
+ "derive_more",
  "fixedbitset",
  "indexmap",
  "log",
@@ -952,8 +956,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_heavy"
-version = "0.2.0"
-source = "git+https://github.com/Jondolf/bevy_heavy#f566d3214c4774b2617f4b95378b1c0ee4cc9e7e"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7c0651daa331c326e1460cb19ee5bf497ed2810982dafca8784db44725f5c4b"
 dependencies = [
  "bevy_math",
  "bevy_reflect",
@@ -1001,7 +1006,7 @@ dependencies = [
  "bevy_math",
  "bevy_platform",
  "bevy_reflect",
- "derive_more 2.0.1",
+ "derive_more",
  "log",
  "smol_str",
  "thiserror 2.0.17",
@@ -1133,7 +1138,7 @@ checksum = "f7a41e368ffa95ae2a353197d1ae3993f4d3d471444d80b65c932db667ea7b9e"
 dependencies = [
  "approx",
  "bevy_reflect",
- "derive_more 2.0.1",
+ "derive_more",
  "glam 0.30.8",
  "itertools 0.14.0",
  "libm",
@@ -1163,7 +1168,7 @@ dependencies = [
  "bevy_transform",
  "bitflags 2.9.4",
  "bytemuck",
- "derive_more 2.0.1",
+ "derive_more",
  "hexasphere",
  "thiserror 2.0.17",
  "tracing",
@@ -1211,7 +1216,7 @@ dependencies = [
  "bevy_utils",
  "bitflags 2.9.4",
  "bytemuck",
- "derive_more 2.0.1",
+ "derive_more",
  "fixedbitset",
  "nonmax",
  "offset-allocator",
@@ -1313,7 +1318,7 @@ dependencies = [
  "bevy_ptr",
  "bevy_reflect_derive",
  "bevy_utils",
- "derive_more 2.0.1",
+ "derive_more",
  "disqualified",
  "downcast-rs",
  "erased-serde",
@@ -1373,7 +1378,7 @@ dependencies = [
  "bevy_window",
  "bitflags 2.9.4",
  "bytemuck",
- "derive_more 2.0.1",
+ "derive_more",
  "downcast-rs",
  "encase",
  "fixedbitset",
@@ -1420,7 +1425,7 @@ dependencies = [
  "bevy_reflect",
  "bevy_transform",
  "bevy_utils",
- "derive_more 2.0.1",
+ "derive_more",
  "serde",
  "thiserror 2.0.17",
  "uuid",
@@ -1493,7 +1498,7 @@ dependencies = [
  "bevy_utils",
  "bitflags 2.9.4",
  "bytemuck",
- "derive_more 2.0.1",
+ "derive_more",
  "fixedbitset",
  "nonmax",
  "tracing",
@@ -1539,7 +1544,7 @@ dependencies = [
  "bevy_platform",
  "concurrent-queue",
  "crossbeam-queue",
- "derive_more 2.0.1",
+ "derive_more",
  "futures-lite",
  "heapless",
  "pin-project",
@@ -1599,15 +1604,16 @@ dependencies = [
  "bevy_reflect",
  "bevy_tasks",
  "bevy_utils",
- "derive_more 2.0.1",
+ "derive_more",
  "serde",
  "thiserror 2.0.17",
 ]
 
 [[package]]
 name = "bevy_transform_interpolation"
-version = "0.2.0"
-source = "git+https://github.com/Jondolf/bevy_transform_interpolation#87d5627c11471d8eda78b5bee7c47a6e4df52537"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "284738382605476667bbe80cf0959f4dffb61adbdb0149e22e67f4dbf97a5bc2"
 dependencies = [
  "bevy",
 ]
@@ -1636,7 +1642,7 @@ dependencies = [
  "bevy_transform",
  "bevy_utils",
  "bevy_window",
- "derive_more 2.0.1",
+ "derive_more",
  "smallvec",
  "taffy",
  "thiserror 2.0.17",
@@ -1670,7 +1676,7 @@ dependencies = [
  "bevy_ui",
  "bevy_utils",
  "bytemuck",
- "derive_more 2.0.1",
+ "derive_more",
  "tracing",
 ]
 
@@ -2161,31 +2167,11 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 
 [[package]]
 name = "derive_more"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a9b99b9cbbe49445b21764dc0625032a89b145a2642e67603e1c936f5458d05"
-dependencies = [
- "derive_more-impl 1.0.0",
-]
-
-[[package]]
-name = "derive_more"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "093242cf7570c207c83073cf82f79706fe7b8317e98620a47d5be7c3d8497678"
 dependencies = [
- "derive_more-impl 2.0.1",
-]
-
-[[package]]
-name = "derive_more-impl"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb7330aeadfbe296029522e6c40f315320aba36fc43a5b3632f3795348f3bd22"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
+ "derive_more-impl",
 ]
 
 [[package]]
@@ -2801,7 +2787,8 @@ dependencies = [
 [[package]]
 name = "glam_matrix_extras"
 version = "0.1.0"
-source = "git+https://github.com/Jondolf/glam_matrix_extras#6e27652b13ea7fe68e939e8a4d48ed8825e5d910"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a321595865557fc1ec990c8eb289b25f0cb1d058997cc0034a17f507704f3183"
 dependencies = [
  "bevy_reflect",
  "glam 0.30.8",
@@ -3980,9 +3967,9 @@ dependencies = [
 
 [[package]]
 name = "parry3d"
-version = "0.24.0"
+version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29a58098398ec9b65abcd8c04501430bd273e3bb48ef3664d4d4e0eb7a44029d"
+checksum = "e6f02d098003d45982f41f9884941438e7e90eadf5e542389e7188e5b404d5ab"
 dependencies = [
  "approx",
  "arrayvec",
@@ -4009,9 +3996,9 @@ dependencies = [
 
 [[package]]
 name = "parry3d-f64"
-version = "0.24.0"
+version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93bfd7cfba14c8b6e28995966e8302fa4ec374023f96e6ca920e599d7851fe90"
+checksum = "003e47e8173eb6fca6427a14e29f835b5aacfa5ba89bc5632641cf4748985e7c"
 dependencies = [
  "approx",
  "arrayvec",
