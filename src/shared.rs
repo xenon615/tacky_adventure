@@ -55,11 +55,11 @@ pub struct Targetable;
 pub struct LifeTime(pub Timer);
 
 #[derive(Event)]
-pub struct SetMonologueText{pub text: &'static str, pub time: u64}
+pub struct MonologueAddLine{pub text: &'static str, pub time: u64}
 
-impl SetMonologueText  {
+impl MonologueAddLine  {
     pub fn new(text: &'static str) -> Self {
-        Self { text , time: 5 }
+        Self { text , time: 10 }
     }
 
     pub fn with_time(mut self, time: u64) -> Self {

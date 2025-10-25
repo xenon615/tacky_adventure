@@ -14,8 +14,8 @@ impl Plugin for MissilePlugin {
         app
         .add_systems(Startup, init)
         .add_systems(Update, check_lifetime.run_if(any_with_component::<LifeTime>))
-        .add_observer(fire)
         // .add_systems(Update, gizmos)
+        .add_observer(fire)
         .add_observer(on_destroy)
         ;
     }

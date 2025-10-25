@@ -146,15 +146,16 @@ pub fn blast () -> EffectAsset {
     let render_color = ColorOverLifetimeModifier::new(
         Gradient::from_keys(
             vec![
-                (0.0, Vec4::new(2., 2., 2., 1.)),
-                (0.05, Vec4::new(2., 0., 0., 1.)),
-                (0.1, Vec4::new(10.0, 0.0, 0.0, 0.1)),
+                (0.0, Vec4::new(0., 0., 0., 1.)),
+                (0.11, Vec4::new(10., 10., 0., 1.)),
+                (0.2, Vec4::new(0.0, 10.0, 1.0, 1.)),
+                (0.25, Vec4::new(10.0, 0.0, 0.0, 1.))
             ]
         )
     );
 
     let render_size = SetSizeModifier {
-        size: Vec3::splat(4.0).into(),
+        size: Vec3::splat(5.).into(),
         ..default()
     };
 
@@ -162,12 +163,18 @@ pub fn blast () -> EffectAsset {
 
     let init_age = SetAttributeModifier::new(
         Attribute::AGE, 
-        writer.lit(0.).uniform(writer.lit(0.02)).expr()
+        writer.lit(0.)
+        .uniform(writer.lit(0.02))
+        .expr()
     );
 
     let init_lifetime = SetAttributeModifier::new(
         Attribute::LIFETIME,
-        writer.lit(0.1).expr()
+        // writer.lit(0.2).expr()
+        // (writer.rand(ScalarType::Float) * writer.lit(0.1)).expr()
+        writer.lit(0.0).uniform(writer.lit(0.1)) 
+        // (writer.* writer.lit(0.1)).expr()
+        .expr()
     );
 
     let init_pos = SetPositionSphereModifier {
@@ -178,7 +185,7 @@ pub fn blast () -> EffectAsset {
 
     let init_vel = SetVelocitySphereModifier {
         center: writer.lit(Vec3::ZERO).expr(),
-        speed: (writer.rand(ScalarType::Float) * writer.lit(20.)).expr(),
+        speed: (writer.rand(ScalarType::Float) * writer.lit(30.)).expr(),
     };
 
     let render_texture = ParticleTextureModifier {
@@ -190,8 +197,8 @@ pub fn blast () -> EffectAsset {
     module.add_texture_slot("cloud");
 
     EffectAsset::new(
-        1000,
-        SpawnerSettings::once(100.0.into())
+        2000,
+        SpawnerSettings::once(200.0.into())
         .with_emit_on_start(false),
         module,
     )
@@ -204,3 +211,67 @@ pub fn blast () -> EffectAsset {
     .render(render_texture)
     .render(OrientModifier::new(OrientMode::FaceCameraPosition))
 }
+
+
+// pub fn blast () -> EffectAsset {
+//     let render_color = ColorOverLifetimeModifier::new(
+//         Gradient::from_keys(
+//             vec![
+//                 (0.0, Vec4::new(2., 2., 2., 1.)),
+//                 (0.05, Vec4::new(2., 0., 0., 1.)),
+//                 (0.1, Vec4::new(10.0, 0.0, 0.0, 0.1)),
+//             ]
+//         )
+//     );
+
+//     let render_size = SetSizeModifier {
+//         size: Vec3::splat(4.0).into(),
+//         ..default()
+//     };
+
+//     let writer = ExprWriter::new();
+
+//     let init_age = SetAttributeModifier::new(
+//         Attribute::AGE, 
+//         writer.lit(0.).uniform(writer.lit(0.02)).expr()
+//     );
+
+//     let init_lifetime = SetAttributeModifier::new(
+//         Attribute::LIFETIME,
+//         writer.lit(0.1).expr()
+//     );
+
+//     let init_pos = SetPositionSphereModifier {
+//         center: writer.lit(Vec3::ZERO).expr(),
+//         radius: writer.lit(2.).expr(),
+//         dimension: ShapeDimension::Surface,
+//     };
+
+//     let init_vel = SetVelocitySphereModifier {
+//         center: writer.lit(Vec3::ZERO).expr(),
+//         speed: (writer.rand(ScalarType::Float) * writer.lit(20.)).expr(),
+//     };
+
+//     let render_texture = ParticleTextureModifier {
+//         texture_slot: writer.lit(0u32).expr(),
+//         sample_mapping: ImageSampleMapping::ModulateOpacityFromR
+//     };
+
+//     let mut module = writer.finish();
+//     module.add_texture_slot("cloud");
+
+//     EffectAsset::new(
+//         1000,
+//         SpawnerSettings::once(100.0.into())
+//         .with_emit_on_start(false),
+//         module,
+//     )
+//     .init(init_pos)
+//     .init(init_vel)
+//     .init(init_age)
+//     .init(init_lifetime)
+//     .render(render_color)
+//     .render(render_size)
+//     .render(render_texture)
+//     .render(OrientModifier::new(OrientMode::FaceCameraPosition))
+// }

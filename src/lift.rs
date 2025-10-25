@@ -7,7 +7,7 @@ use crate:: {
     effects::steam, 
     help::SetHelpData, 
 
-    shared::{get_platform, OptionIndex,  Player, SetMonologueText}
+    shared::{get_platform, OptionIndex,  Player, MonologueAddLine}
 };
 
 
@@ -134,7 +134,7 @@ fn set_help(
         keys: "L (On / Off), Num + (Up), Num - (Down)",
         hint: "use the lift to go up or down"
     });
-    cmd.trigger(SetMonologueText::new("Lift is available, check out the help"));
+    cmd.trigger(MonologueAddLine::new("Lift is available, check out the help"));
 }
 
 

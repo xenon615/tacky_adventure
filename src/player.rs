@@ -14,7 +14,7 @@ use crate::{
     ui::{self, UiSlot}};
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
-use crate::shared:: {CastBuild, Damage, Player, SetMonologueText};
+use crate::shared:: {CastBuild, Damage, Player, MonologueAddLine};
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
@@ -100,7 +100,7 @@ fn on_ready (
 fn enter_game(
     mut cmd: Commands
 ) {
-    cmd.trigger(SetMonologueText::new("Hi").with_time(20));
+    cmd.trigger(MonologueAddLine::new("Hi"));
 }
 
 // ---
@@ -228,7 +228,7 @@ fn on_damage(
     health_ui_q: Single<(&mut Text, &mut TextColor), With<HealthUI>>
 ) {
     let (mut ad, damage, hm) = player_q.into_inner();
-    cmd.trigger(SetMonologueText::new("Ouch!!").with_time(1));
+    cmd.trigger(MonologueAddLine::new("Ouch!!").with_time(1));
     if hm.0 - damage.0 <= 0. {
         info!("Game Over");
         ad.animation_index = 5;

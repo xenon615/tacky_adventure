@@ -9,7 +9,7 @@ use avian3d::prelude::*;
 use std::{ops::{Add, Mul}, time::Duration};
 use crate::shared::{vec_rnd, DamageDeal, HealthMax, Player, Threat, GameState, OptionIndex};
 
-use crate::shared::{fibonacci_sphere, closest, SetMonologueText, Targetable};
+use crate::shared::{fibonacci_sphere, closest, MonologueAddLine, Targetable};
 
 pub struct VirusPlugin;
 impl Plugin for VirusPlugin {
@@ -103,7 +103,7 @@ fn startup(
     ;
 
     cmd.insert_resource(EnabledVirus);
-    cmd.trigger(SetMonologueText::new("Virus?!!!!"));
+    cmd.trigger(MonologueAddLine::new("Virus?!!!!"));
 } 
 
 // ---

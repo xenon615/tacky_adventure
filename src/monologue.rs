@@ -6,7 +6,7 @@ use bevy::{
 
 use crate::{
     camera::Cam,
-    shared::{Player, SetMonologueText}
+    shared::{MonologueAddLine, Player}, ui
 };
     
 
@@ -14,10 +14,11 @@ pub struct MonologuePlugin;
 impl Plugin for MonologuePlugin {
     fn build(&self, app: &mut App) {
         app
-        .add_systems(Startup, startup)
-        // .add_systems(Update, follow.run_if(any_match_filter::<ActiveBallon<Ballon, HideTime>>))
-        .add_systems(Update, (follow,hide_ballon).run_if(any_with_component::<HideTime>))
-        // .add_systems(Update, hide_ballon.run_if(any_with_component::<HideTime>))
+        .add_systems(Startup, startup.after(ui::startup))
+        .add_systems(Update, (
+            follow, 
+            hide_ballon
+        ).run_if(any_with_component::<HideTime>))
         .add_observer(set_text)
         ;
     }
@@ -31,7 +32,11 @@ impl Plugin for MonologuePlugin {
 // }
 
 #[derive(Component)]
-pub struct Ballon;
+pub struct Balloon;
+
+#[derive(Component)]
+pub struct BalloonLine;
+
 
 #[derive(Component)]
 pub struct HideTime(Timer);
@@ -42,9 +47,10 @@ fn startup(
     mut cmd: Commands
 ) {
     cmd.spawn((
-        Ballon,
+        Balloon,
         Node {
             position_type: PositionType::Absolute,
+            flex_direction: FlexDirection::Column,
             top: Val::Px(200.),
             left: Val::Px(200.),
             width: Val::Percent(25.),
@@ -58,54 +64,65 @@ fn startup(
         BackgroundColor(css::BLACK.with_alpha(0.9).into()),
         BorderRadius::all(Val::Px(15.)),
         BorderColor::all(css::WHITE),
-        children![
-            (
-                Text::new("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-                TextColor(Color::WHITE)
-            )
-        ],
-
     ));
-
-
-
-    // let Ok(content) = fs::read_to_string("monologue/script.txt") else {
-    //     return;
-    // };
-
 
 }
 
 // ---
 
 fn set_text(
-    tr: On<SetMonologueText>,
-    ballon_q: Single<(Entity, &Children, &mut Visibility), With<Ballon>>,
-    mut text_q: Query<&mut Text>,
-    mut cmd: Commands
+    tr: On<MonologueAddLine>,
+    ballon_q: Single<(Entity,  &mut Visibility), With<Balloon>>,
+    mut cmd: Commands,
+    mut count: Local<u32>
 ) {
-    let (e, ch, mut vis) = ballon_q.into_inner();
-    let Ok(mut text) = text_q.get_mut(ch[0]) else {
-        return;
-    };
-    *vis = Visibility::Visible;
+    let (e, mut vis) = ballon_q.into_inner();
 
-    text.0 = tr.event().text.to_string();
-    cmd.entity(e).insert(HideTime(Timer::new(Duration::from_secs(tr.event().time), TimerMode::Once)));
+    let new_line = cmd.spawn(
+        (
+            Node {
+                width: Val::Percent(100.),
+                padding: UiRect::all(Val::Px(5.)),
+                margin: UiRect::bottom(Val::Px(5.)),
+                 ..default()
+            },
+            BalloonLine,
+            children![(
+                TextColor(if *count % 2 == 0 {Color::linear_rgb(0.4, 1.1, 0.0)} else {Color::linear_rgb(1.1, 1.1, 0.1)}),
+                Text::new(tr.event().text),
+            )]
+        )    
+    ).id()
+    ;
+    cmd.entity(e).add_child(new_line); 
+
+    cmd.entity(new_line).insert(HideTime(Timer::new(Duration::from_secs(tr.event().time), TimerMode::Once)));
+    *vis = Visibility::Visible;
+    *count += 1;
 }
+
 
 // ---
 
 fn hide_ballon (
-    ballon_q: Single<(Entity, &mut Visibility, &mut HideTime), With<Ballon>>,
+    mut line_q: Query<(Entity, &mut HideTime), With<BalloonLine>>,
+    ballon_q: Single<&mut Visibility, With<Balloon>>,
     mut cmd: Commands,
     time: Res<Time>
 ) {
-    let (e, mut v, mut ht) = ballon_q.into_inner();
-    ht.0.tick(time.delta());
-    if ht.0.is_finished() {
-        *v = Visibility::Hidden;
-        cmd.entity(e).remove::<HideTime>();
+    let mut v = ballon_q.into_inner();
+    let count = line_q.count();
+    let mut despawned = 0;
+    for  (ble, mut ht) in &mut line_q  {
+        ht.0.tick(time.delta());
+        if ht.0.is_finished() {
+            cmd.entity(ble).despawn();
+            despawned += 1;
+        }
+
+    }
+    if despawned == count {
+        *v  = Visibility::Hidden;
     }
 }
 
@@ -114,7 +131,7 @@ fn hide_ballon (
 #[allow(dead_code)]
 fn follow(
     player_q: Single<&Transform, With<Player>>,   
-    ballon_q: Single<&mut Node, With<Ballon>>,
+    ballon_q: Single<&mut Node, With<Balloon>>,
     camera_query: Single<(&Camera, &GlobalTransform), With<Cam>>,
 ) {
     let (camera, camera_transform) = camera_query.into_inner();

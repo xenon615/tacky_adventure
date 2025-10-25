@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::help::SetHelpData;
 use crate::shared::Exit;
-use crate::{shared::{OptionIndex,  SetMonologueText, Player}, ui::UiSlot};
+use crate::{shared::{OptionIndex,  MonologueAddLine, Player}, ui::UiSlot};
 pub struct AimerPlugin;
 impl Plugin for AimerPlugin {
     fn build(&self, app: &mut App) {
@@ -68,7 +68,7 @@ fn set_help(
         keys: "",
         hint: "the aimer indicates the direction to the target"
     });
-    cmd.trigger(SetMonologueText::new("Aimer is available, check out the help"));
+    cmd.trigger(MonologueAddLine::new("Aimer is available, check out the help"));
 }
 
 // ---

@@ -1,15 +1,15 @@
 use bevy::{
     // gizmos, 
-    pbr::Material, prelude::*, render::{
-        render_resource::AsBindGroup, 
-    },
-    shader::ShaderRef
+    pbr::Material,
+     prelude::*, 
+     render::render_resource::AsBindGroup, 
+     shader::ShaderRef
 };
 use avian3d::{math::Quaternion, prelude::*};
 
 use crate::{
     help::SetHelpData,
-    shared::{get_platform, CastBuild, Exit, OptionIndex,  Player, SetMonologueText, PLATFORM_DIM}
+    shared::{get_platform, CastBuild, Exit, GameState, MonologueAddLine, OptionIndex, Player, PLATFORM_DIM}
 };
 
 pub struct PlatformPlugin;
@@ -17,15 +17,15 @@ impl Plugin for PlatformPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_plugins(MaterialPlugin::<PlatformMaterial>::default())
-        .add_systems(Startup, startup)
+        // .add_systems(Startup, startup)
+        .add_systems(OnEnter(GameState::Game), startup)
         .add_systems(Update, (change_color, set_help).chain().run_if(resource_added::<EnabledBuild>))
         .add_systems(
-            Update, build_single.run_if(
+            Update, apply_keys.run_if(
                 resource_exists::<EnabledBuild>
                 .and(resource_changed::<ButtonInput<KeyCode>>)
             )
         )
-        // .add_observer(opt_enable)
         .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
         ;
     }
@@ -66,7 +66,6 @@ pub struct PlatformMaterialHandle(Handle<PlatformMaterial>);
 #[derive(Resource)]
 struct EnabledBuild;
 
-
 // ---
 
 #[allow(dead_code)]
@@ -88,7 +87,6 @@ fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<PlatformMaterial>>,
-    
 ) {
 
     let mesh = meshes.add(Cuboid::from_size(PLATFORM_DIM));
@@ -98,6 +96,7 @@ fn startup(
     }); 
     cmd.insert_resource(PlatformMaterialHandle(material.clone()));
 
+    let id = 
     cmd.spawn((
         Mesh3d(mesh.clone()),
         MeshMaterial3d(material.clone()),
@@ -105,7 +104,11 @@ fn startup(
         RigidBody::Static,
         Platform,
         Name::new("Platform")
-    ));
+    ))
+    .id()
+    ;
+    info!("id: {:?}", id);
+    cmd.run_system_cached_with(clone_platform, (id, Dir3::NEG_Z, BuildAction::Forward));
 }
 
 // ---
@@ -121,7 +124,7 @@ enum BuildAction {
 
 // ---
 
-fn build_single(
+fn apply_keys(
     player_q: Single<(Entity, &Transform), With<Player>>,
     mut cmd: Commands,
     spatial: SpatialQuery,
@@ -131,12 +134,6 @@ fn build_single(
     if !(keys.any_pressed([KeyCode::AltLeft, KeyCode::AltRight]) && keys.any_just_pressed([KeyCode::KeyQ, KeyCode::KeyA, KeyCode::KeyZ, KeyCode::KeyX])) {
         return;
     }
-    
-    let  (_player_e, player_t) = player_q.into_inner();
-    let Some(RayHitData { entity: platform_e, distance: _ , normal: _ }) = get_platform(player_t, &spatial) else {
-        return;
-    };
-
     let build_action  =  match keys.get_just_pressed().next() {
         Some(KeyCode::KeyQ) => BuildAction::Up,
         Some(KeyCode::KeyZ) => BuildAction::Down,  
@@ -147,8 +144,29 @@ fn build_single(
     if build_action == BuildAction::None {
         return;
     }
+    
+    let  (_player_e, player_t) = player_q.into_inner();
 
-    let _le = build_platform(&mut cmd, &spatial, platform_e, player_t.forward(), build_action, trans_q);
+    let Some(RayHitData { entity: platform_e, distance: _ , normal: _ }) = get_platform(player_t, &spatial) else {
+        return;
+    };
+
+    let Ok(platform_t) = trans_q.get(platform_e) else {
+        return;
+    };
+
+    let Some(face_to) = [platform_t.forward(), platform_t.back(), platform_t.right(), platform_t.left()]
+    .into_iter().max_by(|a, b| {
+        player_t.forward().dot(**a).total_cmp(&player_t.forward().dot(**b))
+    }) else {
+        warn!("No face");
+        return;
+    };
+
+
+    // let _le = build_platform(&mut cmd, &spatial, platform_e, &face_to, build_action, trans_q);
+
+    cmd.run_system_cached_with(clone_platform, (platform_e, face_to, build_action));
    
     cmd.trigger(CastBuild);
 }
@@ -156,26 +174,21 @@ fn build_single(
 
 // ---
 
-fn build_platform(
-    cmd: &mut Commands,
-    spatial: &SpatialQuery,
-    platform_e: Entity, 
-    build_dir: Dir3,
-    build_action: BuildAction,
+fn clone_platform(
+    In((platform_e, face_to, build_action)): In<(Entity, Dir3, BuildAction)>,
+    mut cmd: Commands,
+    spatial: SpatialQuery,
     trans_q: Query<&Transform, Without<Player>>
-) {
+ ) {
+
+    println!("{:?} {:?} {:?} ", platform_e, face_to, build_action);
+
     let Ok(platform_t) = trans_q.get(platform_e) else {
         warn!("No platform");
         return;
     };
 
-    let Some(face_to) = [platform_t.forward(), platform_t.back(), platform_t.right(), platform_t.left()]
-    .into_iter().max_by(|a, b| {
-        build_dir.dot(**a).total_cmp(&build_dir.dot(**b))
-    }) else {
-        warn!("No face");
-        return;
-    };
+    
 
     let add = Quat::from_rotation_arc(*platform_t.forward(), *face_to).normalize();
 
@@ -194,6 +207,7 @@ fn build_platform(
 
     let connect_point = platform_t.translation + *face_to * step * 0.5 + shift;
     let pos = connect_point + rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * (0.5 + GAP));
+
     let intersect: Vec<_> = spatial.shape_intersections(&Collider::sphere(0.5), connect_point, Quaternion::IDENTITY, &SpatialQueryFilter::default())
         .into_iter()
         .filter(| e | ![platform_e].contains(e))
@@ -214,6 +228,7 @@ fn build_platform(
     } else {
         intersect.iter().for_each(|e| cmd.entity(*e).despawn());
     }
+    println!("yes");
 
 }
 
@@ -240,7 +255,7 @@ fn set_help(
         keys: "Alt + Q (Up), Alt + A (Forward), Alt + Z (Dowm), Alt + X (Delete)",
         hint: "Turn in the desired direction and build a platform"
     });
-    cmd.trigger(SetMonologueText::new("Platform Builder is available, check out the help"));
+    cmd.trigger(MonologueAddLine::new("Platform Builder is available, check out the help"));
 }
 
 // --

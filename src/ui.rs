@@ -63,8 +63,9 @@ pub fn startup(
         ));
 
         root.spawn((
-            // BackgroundColor(css::VIOLET.into()),
+            // BackgroundColor(Color::hsl(10., 1.0, 0.5).into()),
             Node {
+                // align_items: AlignItems::Center,
                 flex_grow: 1.0,
                 width: Val::Percent(100.),
                 padding: UiRect::all(Val::Px(20.)),
@@ -78,6 +79,7 @@ pub fn startup(
             // BackgroundColor(css::BROWN.into()),
             Node {
                 flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
                 width: Val::Percent(100.),
                 height: Val::Px(50.),
                 ..default()
