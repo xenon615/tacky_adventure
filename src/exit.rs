@@ -62,7 +62,7 @@ fn start(
         Exit,
         Mesh3d(meshes.add(Cuboid::from_length(4.))),
         MeshMaterial3d(emh.clone()),
-        Transform::from_translation(Vec3::new(0., 3., 0.)),
+        Transform::from_translation(Vec3::new(0., 3., -100.)),
         RigidBody::Kinematic,
         Collider::cuboid(4., 4., 4.),
         CollisionEventsEnabled,
@@ -96,7 +96,6 @@ fn on_collide(
     cmd.entity(me).insert(MoveExit(vec_rnd(-max .. max, 0 .. max, -max .. max)));
     // cmd.entity(me).remove::<Sensor>();
 }
-
 
 
 // ---

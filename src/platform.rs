@@ -107,8 +107,7 @@ fn startup(
     ))
     .id()
     ;
-    info!("id: {:?}", id);
-    cmd.run_system_cached_with(clone_platform, (id, Dir3::NEG_Z, BuildAction::Forward));
+    cmd.run_system_cached_with(clone_platform, (id, Dir3::NEG_Z, BuildAction::Forward, 10));
 }
 
 // ---
@@ -163,10 +162,7 @@ fn apply_keys(
         return;
     };
 
-
-    // let _le = build_platform(&mut cmd, &spatial, platform_e, &face_to, build_action, trans_q);
-
-    cmd.run_system_cached_with(clone_platform, (platform_e, face_to, build_action));
+    cmd.run_system_cached_with(clone_platform, (platform_e, face_to, build_action, 1));
    
     cmd.trigger(CastBuild);
 }
@@ -175,20 +171,15 @@ fn apply_keys(
 // ---
 
 fn clone_platform(
-    In((platform_e, face_to, build_action)): In<(Entity, Dir3, BuildAction)>,
+    In((platform_e, face_to, build_action, count)): In<(Entity, Dir3, BuildAction, usize)>,
     mut cmd: Commands,
     spatial: SpatialQuery,
     trans_q: Query<&Transform, Without<Player>>
  ) {
-
-    println!("{:?} {:?} {:?} ", platform_e, face_to, build_action);
-
     let Ok(platform_t) = trans_q.get(platform_e) else {
         warn!("No platform");
         return;
     };
-
-    
 
     let add = Quat::from_rotation_arc(*platform_t.forward(), *face_to).normalize();
 
@@ -206,8 +197,6 @@ fn clone_platform(
     };
 
     let connect_point = platform_t.translation + *face_to * step * 0.5 + shift;
-    let pos = connect_point + rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * (0.5 + GAP));
-
     let intersect: Vec<_> = spatial.shape_intersections(&Collider::sphere(0.5), connect_point, Quaternion::IDENTITY, &SpatialQueryFilter::default())
         .into_iter()
         .filter(| e | ![platform_e].contains(e))
@@ -218,19 +207,22 @@ fn clone_platform(
             warn!("No intersect");
             return;
         }
-        cmd.entity(platform_e)
-        .clone_and_spawn()
-        .insert((   
-            Position::new(pos),
-            Rotation(rotation)
-        ))
-        ;
+        let pos = connect_point + rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * (0.5 + GAP));
+        for i in 0 .. count {
+            cmd.entity(platform_e)
+            .clone_and_spawn()
+            .insert((   
+                Position::new(pos * (i + 1) as f32),
+                Rotation(rotation)
+            ))
+            ;
+        }
     } else {
         intersect.iter().for_each(|e| cmd.entity(*e).despawn());
     }
-    println!("yes");
 
 }
+
 
 // ---
 
