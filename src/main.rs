@@ -34,6 +34,7 @@ mod aimer;
 mod virus;
 mod missile;
 mod damage;
+mod asteroid;
 
 fn main() {
     let mut app = App::new();
@@ -60,7 +61,8 @@ fn main() {
         aimer::AimerPlugin,
         virus::VirusPlugin,
         missile::MissilePlugin,
-        damage::DamagePlugin
+        damage::DamagePlugin,
+        asteroid::AsteroidPlugin
     ))
     // .add_plugins(PhysicsDebugPlugin::default())
     .add_plugins(EguiPlugin::default() )

@@ -4,8 +4,7 @@ use bevy::{
         mouse::{MouseMotion, MouseWheel},
         common_conditions::input_pressed,
     },
-    render::view::NoIndirectDrawing,
-    // pbr::Atmosphere,
+
     core_pipeline::{
         Skybox, 
     },
@@ -70,7 +69,7 @@ fn setup (
         Cam,
         Camera::default(),
         // PanOrbitCamera::default(),
-        NoIndirectDrawing
+        // NoIndirectDrawing
         
     ));
 
@@ -162,20 +161,21 @@ fn opt_index_changed (
         let cam_e = cam_q.into_inner();
         cmd.entity(cam_e).insert((
             Skybox {
-                image: assets.load("skyboxes/interstellar_blue.ktx2"),
+                // image: assets.load("skyboxes/interstellar_blue.ktx2"),
+                image: assets.load("skyboxes/space_green.ktx2"),
                 brightness: 500.,
                 ..default()
             },
 
             MotionBlur::default(),
-            DistanceFog {
-                color: Color::srgb(0.25, 0.25, 0.25),
-                falloff: FogFalloff::Linear {
-                    start: 50.0,
-                    end: 200.0,
-                },
-                ..default()
-            },
+            // DistanceFog {
+            //     color: Color::srgb(0.25, 0.25, 0.25),
+            //     falloff: FogFalloff::Linear {
+            //         start: 50.0,
+            //         end: 200.0,
+            //     },
+            //     ..default()
+            // },
         // Atmosphere::EARTH,
 
         ));

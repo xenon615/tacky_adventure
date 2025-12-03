@@ -6,12 +6,25 @@ use bevy::{
 use bevy_hanabi::prelude::*;
 
 #[allow(dead_code)]
-pub fn steam() -> EffectAsset{
+pub fn lift_steam() -> EffectAsset{
     let writer = ExprWriter::new();
-    let init_pos = SetAttributeModifier::new(
-        Attribute::POSITION, 
-        writer.lit(Vec3::ZERO).expr()
-    );
+
+    // let init_pos = SetAttributeModifier::new(
+    //     Attribute::POSITION, 
+    //     writer.lit(Vec3::ZERO).expr()
+    // );
+
+
+    let init_pos = SetPositionCircleModifier {
+        center: writer.lit(Vec3::ZERO).expr(),
+        dimension: ShapeDimension::Surface,
+        radius: writer.lit(2.).expr(),
+        // radius: writer.lit(2.).uniform(writer.lit(1.5)).expr(),
+        axis: writer.lit(Vec3::Y).expr()
+    };
+
+
+
     let init_age = SetAttributeModifier::new(
         Attribute::AGE,
         writer.lit(0.0).expr()

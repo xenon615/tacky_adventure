@@ -24,6 +24,10 @@ pub struct AimerImageHandle(Handle<Image>);
 #[derive(Component)]
 pub struct ArrowYaw;
 
+#[derive(Component)]
+pub struct Elevation;
+
+
 #[derive(Resource)]
 pub struct EnabledAimer;
 
@@ -46,13 +50,29 @@ fn init_ui(
 ) {
     for (e, s) in &slot_q {
         if *s == UiSlot::TopRight {
-            let ch = cmd.spawn((
+            let ch1 = cmd.spawn((
                 ArrowYaw,
                 ImageNode::new(ihr.0.clone()),
             ))
             .id()
             ;
-            cmd.entity(e).add_child(ch);
+            let ch2 = cmd.spawn((
+                Elevation,
+                Node{
+                    padding: UiRect::left(Val::Px(10.)),
+                    ..default()
+                },
+                
+                children![
+                    (Text::new("Up"), Elevation)
+                ]
+                
+            ))
+            .id()
+            ;
+
+            cmd.entity(e).add_child(ch1);
+            cmd.entity(e).add_child(ch2);
         }
     }
     cmd.insert_resource(EnabledAimer);
@@ -77,6 +97,7 @@ fn update_aimer(
     exit_q: Single<&Transform, (With<Exit>, Without<Player>, Without<ArrowYaw>)>,
     player_q: Single<&Transform, (With<Player>, Without<Exit>, Without<ArrowYaw>)>,
     arrow_yaw_q: Single<&mut UiTransform, (With<ArrowYaw>, Without<Player>, Without<Exit>)>,
+    elevation_text: Single<&mut Text, With<Elevation>>,
     time: Res<Time>
 ) {
     let exit_t = exit_q.into_inner();
@@ -89,12 +110,23 @@ fn update_aimer(
     let sign = to_target_xz.cross(forward_xz).y.signum();
     let angle = dot.acos() * sign;
     arrow_yaw_t.rotation =  arrow_yaw_t.rotation.nlerp(Rot2::radians(angle), time.delta_secs() * 0.5);
+
+
+    let elevation_update = match exit_t.translation.y - player_t.translation.y {
+        x if x > 2. => Some("Up"),
+        x if x < -2. => Some("Down"),
+        _ => None
+    };
+    if let Some(t) = elevation_update {
+       elevation_text.into_inner().0 = t.into(); 
+    }
+
  
 }
 
 // --
 
-const OPTION_INDEX: usize = 3;
+const OPTION_INDEX: usize = 1;
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,

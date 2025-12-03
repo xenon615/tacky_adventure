@@ -4,7 +4,7 @@ use avian3d::prelude::*;
 use bevy_hanabi::prelude::*;
 
 use crate:: {
-    effects::steam, 
+    effects::lift_steam, 
     help::SetHelpData, 
 
     shared::{get_platform, OptionIndex,  Player, MonologueAddLine}
@@ -68,7 +68,7 @@ fn prepare_effect(
 ) {
         cmd.spawn((
         Name::new("circle"),
-        ParticleEffect::new(effects.add(steam())),
+        ParticleEffect::new(effects.add(lift_steam())),
         Transform::from_xyz(0., -0.5, 0.),
         EffectProperties::default(),
         EffectMaterial{
@@ -138,7 +138,7 @@ fn set_help(
 }
 
 
-const OPTION_INDEX: usize = 2;
+const OPTION_INDEX: usize = 1;
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,

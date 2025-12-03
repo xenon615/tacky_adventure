@@ -18,7 +18,7 @@ fn palette(t: f32) ->  vec3f {
 @fragment  
 fn fragment(vo: VertexOutput) -> @location(0) vec4f {
     if (stage_index == 0) {
-        return vec4f(1, 1, 1, 1);
+        return vec4f(0.3, 0.3, 0.3, 1);
     } 
 
     var uv = 2. * vo.uv - 1;

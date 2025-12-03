@@ -91,7 +91,7 @@ fn startup(
 
     let mesh = meshes.add(Cuboid::from_size(PLATFORM_DIM));
     let material = materials.add(PlatformMaterial {
-        color: Color::srgba (0., 0., 1., 0.1).into(), 
+        color: Color::srgba (0., 0., 0., 0.1).into(), 
         stage_index: 0 
     }); 
     cmd.insert_resource(PlatformMaterialHandle(material.clone()));
@@ -228,7 +228,6 @@ fn clone_platform(
 
 fn change_color(
     mh: Res<PlatformMaterialHandle>,
-    // mh_q: Single<&MeshMaterial3d<PlatformMaterial>>,
     mut materials: ResMut<Assets<PlatformMaterial>>
 ) {
     let Some(m) = materials.get_mut(&mh.0) else {

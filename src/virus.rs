@@ -146,7 +146,7 @@ fn spawn_next(
 
 // ---
 
-const OPTION_INDEX: usize = 4;
+const OPTION_INDEX: usize = 5;
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,
