@@ -225,66 +225,64 @@ pub fn blast () -> EffectAsset {
     .render(OrientModifier::new(OrientMode::FaceCameraPosition))
 }
 
+// ---
 
-// pub fn blast () -> EffectAsset {
-//     let render_color = ColorOverLifetimeModifier::new(
-//         Gradient::from_keys(
-//             vec![
-//                 (0.0, Vec4::new(2., 2., 2., 1.)),
-//                 (0.05, Vec4::new(2., 0., 0., 1.)),
-//                 (0.1, Vec4::new(10.0, 0.0, 0.0, 0.1)),
-//             ]
-//         )
-//     );
+#[allow(dead_code)]
+pub fn scattering() -> EffectAsset {
 
-//     let render_size = SetSizeModifier {
-//         size: Vec3::splat(4.0).into(),
-//         ..default()
-//     };
+    let render_color = ColorOverLifetimeModifier::new(
+        Gradient::from_keys(
+            vec![
+                (0.0, Vec4::new(1., 1., 0., 1.)),
+                (0.5, Vec4::new(0.0, 10.0, 1.0, 1.)),
+                (0.7, Vec4::new(0.0, 0.0, 10.0, 1.))
+            ]
+        )
+    );
 
-//     let writer = ExprWriter::new();
+    let render_size = SetSizeModifier {
+        size: Vec3::splat(2.).into(),
+        ..default()
+    };
 
-//     let init_age = SetAttributeModifier::new(
-//         Attribute::AGE, 
-//         writer.lit(0.).uniform(writer.lit(0.02)).expr()
-//     );
+    let writer = ExprWriter::new();
 
-//     let init_lifetime = SetAttributeModifier::new(
-//         Attribute::LIFETIME,
-//         writer.lit(0.1).expr()
-//     );
+    let init_age = SetAttributeModifier::new(Attribute::AGE, writer.lit(0.).uniform(writer.lit(0.02)).expr());
 
-//     let init_pos = SetPositionSphereModifier {
-//         center: writer.lit(Vec3::ZERO).expr(),
-//         radius: writer.lit(2.).expr(),
-//         dimension: ShapeDimension::Surface,
-//     };
+    let init_lifetime = SetAttributeModifier::new(Attribute::LIFETIME, writer.lit(0.0).uniform(writer.lit(0.8)).expr());
 
-//     let init_vel = SetVelocitySphereModifier {
-//         center: writer.lit(Vec3::ZERO).expr(),
-//         speed: (writer.rand(ScalarType::Float) * writer.lit(20.)).expr(),
-//     };
+    let init_pos = SetPositionSphereModifier {
+        center: writer.lit(Vec3::ZERO).expr(),
+        radius: writer.lit(1.).expr(),
+        dimension: ShapeDimension::Surface,
+    };
 
-//     let render_texture = ParticleTextureModifier {
-//         texture_slot: writer.lit(0u32).expr(),
-//         sample_mapping: ImageSampleMapping::ModulateOpacityFromR
-//     };
+    let init_vel = SetVelocitySphereModifier {
+        center: writer.lit(Vec3::ZERO).expr(),
+        speed: (writer.rand(ScalarType::Float) * writer.lit(10.)).expr(),
+    };
 
-//     let mut module = writer.finish();
-//     module.add_texture_slot("cloud");
+    let render_texture = ParticleTextureModifier {
+        texture_slot: writer.lit(0u32).expr(),
+        sample_mapping: ImageSampleMapping::ModulateOpacityFromR
+    };
 
-//     EffectAsset::new(
-//         1000,
-//         SpawnerSettings::once(100.0.into())
-//         .with_emit_on_start(false),
-//         module,
-//     )
-//     .init(init_pos)
-//     .init(init_vel)
-//     .init(init_age)
-//     .init(init_lifetime)
-//     .render(render_color)
-//     .render(render_size)
-//     .render(render_texture)
-//     .render(OrientModifier::new(OrientMode::FaceCameraPosition))
-// }
+
+    let mut module = writer.finish();
+    module.add_texture_slot("cloud");
+
+    EffectAsset::new(
+        2000,
+        SpawnerSettings::once(500.0.into())
+        .with_emit_on_start(false),
+        module,
+    )
+    .init(init_pos)
+    .init(init_vel)
+    .init(init_age)
+    .init(init_lifetime)
+    .render(render_color)
+    .render(render_size)
+    .render(render_texture)
+     .render(OrientModifier::new(OrientMode::AlongVelocity))
+}

@@ -100,7 +100,7 @@ fn on_ready (
 fn enter_game(
     mut cmd: Commands
 ) {
-    cmd.trigger(MonologueAddLine::new("Hi"));
+    cmd.trigger(MonologueAddLine::new("Hi").with_time(20));
 }
 
 // ---

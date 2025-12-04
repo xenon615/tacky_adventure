@@ -4,12 +4,12 @@ use bevy:: {
     shader::ShaderRef,
     time::common_conditions::on_timer,
 };
-
+use bevy_hanabi::{EffectAsset, EffectMaterial, EffectSpawner, ParticleEffect};
 use avian3d::prelude::*;
 use std::{ops::{Add, Mul}, time::Duration};
-use crate::shared::{vec_rnd, DamageDeal, HealthMax, Player, Threat, GameState, OptionIndex};
+use crate::{effects::scattering, shared::{DamageDeal, GameState, HealthMax, MonologueAddLine, OptionIndex, Player, Targetable, Threat, closest, fibonacci_sphere, vec_rnd}};
 
-use crate::shared::{fibonacci_sphere, closest, MonologueAddLine, Targetable};
+// ---
 
 pub struct VirusPlugin;
 impl Plugin for VirusPlugin {
@@ -24,6 +24,7 @@ impl Plugin for VirusPlugin {
         )
         .add_systems(OnEnter(GameState::Over), | mut cmd: Commands | cmd.remove_resource::<EnabledVirus>() )
         .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
+        .add_observer(on_despawn)
         ;
     }
 }
@@ -42,7 +43,7 @@ impl Material for VirusMaterial {
     }
 
     fn alpha_mode(&self) -> AlphaMode {
-        AlphaMode::Add
+        AlphaMode::Blend
     }
 }
 
@@ -61,6 +62,9 @@ pub struct VirusSample;
 #[derive(Resource)]
 pub struct EnabledVirus;
 
+#[derive(Component)]
+pub struct Scattering;
+
 
 // ---
 
@@ -72,8 +76,9 @@ const MAX_HEALTH: f32 = 1.;
 fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    // mut materials: ResMut<Assets<StandardMaterial>>
-    mut materials: ResMut<Assets<VirusMaterial>>
+    mut materials: ResMut<Assets<VirusMaterial>>,
+    assets: ResMut<AssetServer>,
+    mut effects: ResMut<Assets<EffectAsset>>,
 ) {
 
     let mut mesh = Sphere::new(1.).mesh().ico(6).unwrap();
@@ -101,6 +106,18 @@ fn startup(
         VirusSample, 
     ))
     ;
+
+    let image_h = assets.load("textures/spark1.png");
+    cmd.spawn((
+        ParticleEffect::new(effects.add(scattering())),
+        LinearVelocity::default(),
+        EffectMaterial{
+            images: vec![
+                image_h.clone()
+            ]
+        },
+        Scattering
+    ));
 
     cmd.insert_resource(EnabledVirus);
     cmd.trigger(MonologueAddLine::new("Virus?!!!!"));
@@ -146,7 +163,7 @@ fn spawn_next(
 
 // ---
 
-const OPTION_INDEX: usize = 5;
+const OPTION_INDEX: usize = 1;
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,
@@ -156,3 +173,26 @@ fn opt_index_changed(
         cmd.insert_resource(EnabledVirus);
     }
 } 
+
+
+// ---
+
+fn on_despawn(
+    tr: On<Remove, Virus>,
+    victim_q: Query<(&Transform, &LinearVelocity), (With<Virus>, Without<Scattering>)>,
+    scatt_q: Single<(&mut Transform, &mut EffectSpawner, &mut LinearVelocity), (With<Scattering>, Without<Virus>)>
+) {
+
+
+    let Ok((v_trans, v_lv)) = victim_q.get(tr.event_target()) else {
+        return;
+    };
+
+    let (mut e_trans, mut e_es, mut e_lv) = scatt_q.into_inner();
+    e_trans.translation = v_trans.translation;
+    e_lv.0 = v_lv.0;
+    e_es.reset();
+
+
+    // println!("removed virus entity {} on {}", tr.event_target(), v_trans.translation );
+}
