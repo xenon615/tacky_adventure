@@ -226,9 +226,9 @@ fn animate(
 
 fn build_action(
     _tr: On<CastBuild>,
-    ad_q: Single<(Entity, &mut AniData), With<Player>>,
+    ad_q: Single<&mut AniData, With<Player>>,
  ) {
-    let (e, mut ad) = ad_q.into_inner();
+    let mut ad = ad_q.into_inner();
     ad.animation_index = 4;
 }
 
@@ -304,10 +304,12 @@ fn animation_changed(
     let (e, ad) = player_q.into_inner();
 
     if ad.animation_index == 0 {
-        cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_secs(10), TimerMode::Once), 7));
+        cmd.entity(e).insert(NextAfter(Timer::new(Duration::from_secs(10), TimerMode::Once), 7));
     }  else if ad.animation_index == 4 {
-        cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_millis(500), TimerMode::Once), 0));    
+        cmd.entity(e).insert(NextAfter(Timer::new(Duration::from_millis(500), TimerMode::Once), 0));    
     } else if ad.animation_index == 5 {
-        cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_millis(1500), TimerMode::Once), 6));       
+        cmd.entity(e).insert(NextAfter(Timer::new(Duration::from_millis(1500), TimerMode::Once), 6));       
+    } else {
+        cmd.entity(e).remove::<NextAfter>();
     }
 }
