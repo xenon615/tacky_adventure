@@ -33,6 +33,7 @@ impl Plugin for PlayerPlugin {
         .add_systems(Update, timer.run_if(any_with_component::<NextAfter>))
         .add_observer(build_action)
         .add_systems(OnEnter(GameState::Game), enter_game)
+        .add_systems(Update, animation_changed)
         ;
     }
 }
@@ -57,13 +58,13 @@ fn startup(
     mut graphs: ResMut<Assets<AnimationGraph>>,
     asset: ResMut<AssetServer>
 ) {
-    all_animations.add("Player", "models/player.glb", 7, &mut graphs, &asset);
+    all_animations.add("Player", "models/player.glb", 8, &mut graphs, &asset);
     cmd.spawn((
         SceneRoot(asset.load(GltfAssetLabel::Scene(0).from_asset("models/player.glb"))),
         Transform::from_xyz(0., 10., 4.).looking_to(-Vec3::Z, Vec3::Y),
         Player,
         Targetable,
-        AniData::new("Player", 0),
+        AniData::new("Player", 7),
         TnuaController::default(),
         TnuaAvian3dSensorShape(Collider::cylinder(0.49, 0.0)),
         RigidBody::Dynamic,
@@ -161,45 +162,74 @@ fn movement(
 
 // ---
 
+// fn animate(
+//     player_q: Single<(&Transform, &mut AniData, &TnuaController), With<Player>>
+// ) {
+    
+//     let (t, mut ad, tc) = player_q.into_inner();
+//     if [4, 5, 6].contains(&ad.animation_index) {
+//         return;
+//     } 
+
+//     let Some(basis) = tc.dynamic_basis() else {
+//         return;
+//     };
+    
+
+//     let back = t.forward().dot(basis.effective_velocity().normalize()) < 0.;
+
+//     let candidate = if basis.is_airborne() {
+//         2
+//     }  else if basis.effective_velocity().length_squared() > 0.1 {
+//         if back {3} else {1}
+//     } else {
+//         0
+//     };
+
+//     if candidate != ad.animation_index {
+//         ad.animation_index = candidate;
+//     }
+// }
+
+
 fn animate(
-    player_q: Single<(&Transform, &mut AniData, &TnuaController), With<Player>>
+    player_q: Single<(&Transform, &mut AniData, &TnuaController, Entity), With<Player>>
 ) {
     
-    let (t, mut ad, tc) = player_q.into_inner();
+    let (t, mut ad, tc, entity) = player_q.into_inner();
+
     if [4, 5, 6].contains(&ad.animation_index) {
         return;
     } 
-
     let Some(basis) = tc.dynamic_basis() else {
         return;
     };
-    
 
-    let back = t.forward().dot(basis.effective_velocity().normalize()) < 0.;
-
-    let candidate = if basis.is_airborne() {
+    let new_index = if basis.is_airborne() {
         2
-    }  else if basis.effective_velocity().length_squared() > 0.1 {
-        if back {3} else {1}
-    } else {
-        0
+    } else  {
+        if basis.effective_velocity().length_squared() > 0.1 {
+            if t.forward().dot(basis.effective_velocity().normalize()) < 0. {3} else {1}    
+        } else {
+            if 7 != ad.animation_index {0} else {7}            
+        }    
     };
 
-    if candidate != ad.animation_index {
-        ad.animation_index = candidate;
+    if new_index != ad.animation_index {
+        ad.animation_index = new_index;
     }
+
 }
+
 
 // ---
 
 fn build_action(
     _tr: On<CastBuild>,
     ad_q: Single<(Entity, &mut AniData), With<Player>>,
-    mut cmd: Commands
  ) {
     let (e, mut ad) = ad_q.into_inner();
     ad.animation_index = 4;
-    cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_millis(500), TimerMode::Once), 0));
 }
 
 // ---
@@ -220,7 +250,7 @@ fn timer (
 // ---
 
 fn on_damage(
-    tr: On<DamageDealed>,
+    _tr: On<DamageDealed>,
     player_q: Single<(&mut AniData, &Damage, &HealthMax)>, 
     mut cmd: Commands,
     mut next: ResMut<NextState<GameState>>,
@@ -231,7 +261,6 @@ fn on_damage(
     if hm.0 - damage.0 <= 0. {
         info!("Game Over");
         ad.animation_index = 5;
-        cmd.entity(tr.entity).insert(NextAfter(Timer::new(Duration:: from_millis(1500), TimerMode::Once), 6));       
         next.set(GameState::Over);
     } 
 
@@ -263,5 +292,22 @@ fn init_ui(
             ;
             cmd.entity(e).add_child(ch);
         }
+    }
+}
+
+// ---
+
+fn animation_changed(
+    mut cmd: Commands,
+    player_q : Single<(Entity, &AniData), (With<Player>, Changed<AniData>)>
+) {
+    let (e, ad) = player_q.into_inner();
+
+    if ad.animation_index == 0 {
+        cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_secs(10), TimerMode::Once), 7));
+    }  else if ad.animation_index == 4 {
+        cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_millis(500), TimerMode::Once), 0));    
+    } else if ad.animation_index == 5 {
+        cmd.entity(e).insert(NextAfter(Timer::new(Duration:: from_millis(1500), TimerMode::Once), 6));       
     }
 }

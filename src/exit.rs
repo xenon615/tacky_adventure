@@ -89,7 +89,7 @@ fn on_collide(
         return;
     }
     option_index.0 += 1;
-    println!("------option index----- {}", option_index.0);
+    // println!("------option index----- {}", option_index.0);
     let max = if option_index.0 > 2 {40} else {20};
     let Some(me) = tr.body1 else {return;};
     tr_q.into_inner().0 = Vec3::Y * 2.;
