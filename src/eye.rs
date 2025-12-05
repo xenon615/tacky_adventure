@@ -6,7 +6,7 @@ use bevy::{
     color::palettes::css
 };
 
-use crate::shared::{vec_rnd, OptionIndex, Player, MonologueAddLine, Shot, Target, TargetedBy, Threat};
+use crate::{info::InfoCont, monologue::MonologueCont, shared::{MessagesAddLine, OptionIndex, Player, Shot, Target, TargetedBy, Threat, vec_rnd}};
 
 // ---
 
@@ -369,7 +369,7 @@ fn check_ammo_load (
 fn set_help(
     mut cmd: Commands
 ) {
-    cmd.trigger(MonologueAddLine::new("What the hell is this? Are these guys going to attack me or help me? I don't know yet."));
+    cmd.trigger(MessagesAddLine::<MonologueCont>::new("What the hell is this? Are these guys going to attack me or help me? I don't know yet."));
 }
 
 // ---

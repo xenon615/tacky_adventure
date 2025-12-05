@@ -7,7 +7,7 @@ use bevy:: {
 use bevy_hanabi::{EffectAsset, EffectMaterial, EffectSpawner, ParticleEffect};
 use avian3d::prelude::*;
 use std::{ops::{Add, Mul}, time::Duration};
-use crate::{effects::scattering, shared::{DamageDeal, GameState, HealthMax, MonologueAddLine, OptionIndex, Player, Targetable, Threat, closest, fibonacci_sphere, vec_rnd}};
+use crate::{effects::scattering, monologue::MonologueCont, shared::{DamageDeal, GameState, HealthMax, MessagesAddLine, OptionIndex, Player, Targetable, Threat, closest, fibonacci_sphere, vec_rnd}};
 
 // ---
 
@@ -120,7 +120,7 @@ fn startup(
     ));
 
     cmd.insert_resource(EnabledVirus);
-    cmd.trigger(MonologueAddLine::new("Virus?!!!!"));
+    cmd.trigger(MessagesAddLine::<MonologueCont>::new("Virus?!!!!"));
 } 
 
 // ---

@@ -8,8 +8,7 @@ use bevy::{
 use avian3d::{math::Quaternion, prelude::*};
 
 use crate::{
-    help::SetHelpData,
-    shared::{get_platform, CastBuild, Exit, GameState, MonologueAddLine, OptionIndex, Player, PLATFORM_DIM}
+    help::SetHelpData, info::InfoCont, monologue::MonologueCont, shared::{CastBuild, Exit, GameState, MessagesAddLine, OptionIndex, PLATFORM_DIM, Player, get_platform}
 };
 
 pub struct PlatformPlugin;
@@ -246,7 +245,7 @@ fn set_help(
         keys: "Alt + Q (Up), Alt + A (Forward), Alt + Z (Dowm), Alt + X (Delete)",
         hint: "Turn in the desired direction and build a platform"
     });
-    cmd.trigger(MonologueAddLine::new("Platform Builder is available, check out the help"));
+    cmd.trigger(MessagesAddLine::<InfoCont>::new("Platform Builder is available, check out the help"));
 }
 
 // --

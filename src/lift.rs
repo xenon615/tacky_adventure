@@ -4,10 +4,7 @@ use avian3d::prelude::*;
 use bevy_hanabi::prelude::*;
 
 use crate:: {
-    effects::lift_steam, 
-    help::SetHelpData, 
-
-    shared::{get_platform, OptionIndex,  Player, MonologueAddLine}
+    effects::lift_steam, help::SetHelpData, info::InfoCont, shared::{MessagesAddLine, OptionIndex, Player, get_platform}
 };
 
 
@@ -134,7 +131,7 @@ fn set_help(
         keys: "L (On / Off), Num + (Up), Num - (Down)",
         hint: "use the lift to go up or down"
     });
-    cmd.trigger(MonologueAddLine::new("Lift is available, check out the help"));
+    cmd.trigger(MessagesAddLine::<InfoCont>::new("Lift is available, check out the help"));
 }
 
 

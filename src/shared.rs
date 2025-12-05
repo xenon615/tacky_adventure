@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
-use std::ops::Range;
+use std::{marker::PhantomData, ops::Range};
 
 
 #[derive(Component)]
@@ -55,11 +55,11 @@ pub struct Targetable;
 pub struct LifeTime(pub Timer);
 
 #[derive(Event)]
-pub struct MonologueAddLine{pub text: &'static str, pub time: u64}
+pub struct MessagesAddLine<T>{pub text: &'static str, pub time: u64, _marker: PhantomData<T>}
 
-impl MonologueAddLine  {
+impl <T>MessagesAddLine<T>  {
     pub fn new(text: &'static str) -> Self {
-        Self { text , time: 10 }
+        Self { text , time: 10, _marker: PhantomData::<T>}
     }
 
     pub fn with_time(mut self, time: u64) -> Self {

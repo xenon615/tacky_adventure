@@ -10,11 +10,10 @@ use bevy_tnua::prelude::*;
 use bevy_tnua_avian3d::{*, TnuaAvian3dPlugin};
 
 use crate::{
-    shared::{DamageCallback, DamageDeal, DamageDealed, GameState, HealthMax, NotReady, Targetable},
-    ui::{self, UiSlot}};
+    monologue::MonologueCont, shared::{DamageCallback, DamageDeal, DamageDealed, GameState, HealthMax, NotReady, Targetable}, ui::{self, UiSlot}};
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
-use crate::shared:: {CastBuild, Damage, Player, MonologueAddLine};
+use crate::shared:: {CastBuild, Damage, Player, MessagesAddLine};
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
@@ -100,7 +99,7 @@ fn on_ready (
 fn enter_game(
     mut cmd: Commands
 ) {
-    cmd.trigger(MonologueAddLine::new("Hi").with_time(20));
+    cmd.trigger(MessagesAddLine::<MonologueCont>::new("Hi").with_time(5));
 }
 
 // ---
@@ -228,7 +227,7 @@ fn on_damage(
     health_ui_q: Single<(&mut Text, &mut TextColor), With<HealthUI>>
 ) {
     let (mut ad, damage, hm) = player_q.into_inner();
-    cmd.trigger(MonologueAddLine::new("Ouch!!").with_time(1));
+    cmd.trigger(MessagesAddLine::<MonologueCont>::new("Ouch!!").with_time(1));
     if hm.0 - damage.0 <= 0. {
         info!("Game Over");
         ad.animation_index = 5;
