@@ -127,7 +127,7 @@ fn update_aimer(
 
 // --
 
-const OPTION_INDEX: usize = 1;
+const OPTION_INDEX: usize = 4;
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,

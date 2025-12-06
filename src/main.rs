@@ -37,6 +37,7 @@ mod damage;
 mod asteroid;
 mod messages;
 mod info;
+mod intro;
 
 fn main() {
     let mut app = App::new();
@@ -48,7 +49,6 @@ fn main() {
         HanabiPlugin,
         camera::CameraPlugin,
         env::EnvPlugin,
-
     ))
     .add_plugins((
         ui::UiPlugin,
@@ -68,8 +68,11 @@ fn main() {
 
         asteroid::AsteroidPlugin,
         messages::InfoPlugin,
-        info::InfoPlugin
+        info::InfoPlugin,
     ))
+    .add_plugins(
+        intro::IntroPlugin
+    )
     // .add_plugins(PhysicsDebugPlugin::default())
     // .add_plugins(EguiPlugin::default() )
     // .add_plugins(WorldInspectorPlugin::new())
@@ -88,7 +91,7 @@ fn check_ready(
     mut next: ResMut<NextState<GameState>>     
 ) {
     if not_ready_q.is_empty() {
-        next.set(GameState::Game);
+        next.set(GameState::Intro);
     }
 }
 

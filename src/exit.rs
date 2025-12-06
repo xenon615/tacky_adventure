@@ -12,8 +12,6 @@ impl Plugin for ExitPlugin {
         app
         .add_plugins(MaterialPlugin::<ExitMaterial>::default())
         .add_systems(Startup, start)
-        // .add_systems(OnExit(GameStage::Intro), change_shader)
-
         .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
         .add_systems(Update, move_exit.run_if(any_with_component::<MoveExit>))
         ;  

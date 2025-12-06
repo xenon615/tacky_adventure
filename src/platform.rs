@@ -8,7 +8,7 @@ use bevy::{
 use avian3d::{math::Quaternion, prelude::*};
 
 use crate::{
-    help::SetHelpData, info::InfoCont, monologue::MonologueCont, shared::{CastBuild, Exit, GameState, MessagesAddLine, OptionIndex, PLATFORM_DIM, Player, get_platform}
+    help::SetHelpData, info::InfoCont, shared::{CastBuild, Exit, GameState, MessagesAddLine, OptionIndex, PLATFORM_DIM, Player, get_platform}
 };
 
 pub struct PlatformPlugin;
@@ -17,7 +17,7 @@ impl Plugin for PlatformPlugin {
         app
         .add_plugins(MaterialPlugin::<PlatformMaterial>::default())
         // .add_systems(Startup, startup)
-        .add_systems(OnEnter(GameState::Game), startup)
+        .add_systems(OnEnter(GameState::Intro), startup)
         .add_systems(Update, (change_color, set_help).chain().run_if(resource_added::<EnabledBuild>))
         .add_systems(
             Update, apply_keys.run_if(

@@ -75,6 +75,7 @@ impl <T>MessagesAddLine<T>  {
 pub enum GameState {
     #[default]            
     Loading,
+    Intro,
     Game,
     Over
 }

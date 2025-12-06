@@ -61,7 +61,7 @@ fn startup(
     all_animations.add("Player", "models/player.glb", 8, &mut graphs, &asset);
     cmd.spawn((
         SceneRoot(asset.load(GltfAssetLabel::Scene(0).from_asset("models/player.glb"))),
-        Transform::from_xyz(0., 10., 4.).looking_to(-Vec3::Z, Vec3::Y),
+        Transform::from_xyz(0., 10., 0.).looking_to(-Vec3::Z, Vec3::Y),
         Player,
         Targetable,
         AniData::new("Player", 7),
@@ -162,41 +162,11 @@ fn movement(
 
 // ---
 
-// fn animate(
-//     player_q: Single<(&Transform, &mut AniData, &TnuaController), With<Player>>
-// ) {
-    
-//     let (t, mut ad, tc) = player_q.into_inner();
-//     if [4, 5, 6].contains(&ad.animation_index) {
-//         return;
-//     } 
-
-//     let Some(basis) = tc.dynamic_basis() else {
-//         return;
-//     };
-    
-
-//     let back = t.forward().dot(basis.effective_velocity().normalize()) < 0.;
-
-//     let candidate = if basis.is_airborne() {
-//         2
-//     }  else if basis.effective_velocity().length_squared() > 0.1 {
-//         if back {3} else {1}
-//     } else {
-//         0
-//     };
-
-//     if candidate != ad.animation_index {
-//         ad.animation_index = candidate;
-//     }
-// }
-
-
 fn animate(
-    player_q: Single<(&Transform, &mut AniData, &TnuaController, Entity), With<Player>>
+    player_q: Single<(&Transform, &mut AniData, &TnuaController), With<Player>>
 ) {
     
-    let (t, mut ad, tc, entity) = player_q.into_inner();
+    let (t, mut ad, tc) = player_q.into_inner();
 
     if [4, 5, 6].contains(&ad.animation_index) {
         return;

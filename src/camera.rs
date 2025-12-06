@@ -15,8 +15,7 @@ use bevy::{
 use avian3d::prelude::PhysicsSystems;
 // use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
-use crate::shared::{OptionIndex, Player};
-// use crate::shared::GameStage;
+use crate::shared::{GameState, OptionIndex, Player};
 
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
@@ -28,15 +27,19 @@ impl Plugin for CameraPlugin {
             follow
             .after(PhysicsSystems::Writeback)
             .before(TransformSystems::Propagate)
+            .run_if(in_state(GameState::Game))
         )
         .add_systems(Update, mouse_drag
             .run_if(input_pressed(MouseButton::Left))
             .run_if(on_message::<MouseMotion>)
+            .run_if(in_state(GameState::Game))
         )
-        .add_systems(Update, distancing.run_if(on_message::<MouseWheel>)) 
-        // .add_observer(cam_reset)   
-        // .add_systems(Update, switch_state.run_if(state_changed::<GameStage>))
-            .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
+        .add_systems(Update, distancing
+            .run_if(on_message::<MouseWheel>)
+            .run_if(in_state(GameState::Game))
+        ) 
+        .add_observer(cam_reset)   
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
         ; 
     }
 } 
