@@ -60,12 +60,12 @@ fn init_ui(
             let ch2 = cmd.spawn((
                 Elevation,
                 Node{
-                    padding: UiRect::left(Val::Px(10.)),
+                    padding: UiRect::default().with_left(Val::Px(10.)).with_top(Val::Px(10.)),
                     ..default()
                 },
                 
                 children![
-                    (Text::new("Up"), Elevation)
+                    (Text::new(""), Elevation)
                 ]
                 
             ))
@@ -114,20 +114,18 @@ fn update_aimer(
 
 
     let elevation_update = match exit_t.translation.y - player_t.translation.y {
-        x if x > 2. => Some("Up"),
-        x if x < -2. => Some("Down"),
+        x if x > 2. => Some("Higher"),
+        x if x < -2. => Some("Lower"),
         _ => None
     };
     if let Some(t) = elevation_update {
        elevation_text.into_inner().0 = t.into(); 
     }
-
- 
 }
 
 // --
 
-const OPTION_INDEX: usize = 4;
+const OPTION_INDEX: usize = 1;
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,

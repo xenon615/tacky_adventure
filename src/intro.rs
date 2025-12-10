@@ -16,25 +16,25 @@ impl Plugin for IntroPlugin {
 
 // ---
 
-#[derive(Component)]
-struct Cam1;
+// #[derive(Component)]
+// struct Cam1;
 
 fn startup(
     cam_q: Single<&mut Transform, With<Cam>>,
-    mut cmd: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    // mut cmd: Commands,
+    // mut meshes: ResMut<Assets<Mesh>>,
+    // mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // cam_q.into_inner().translation = Vec3::new(100., 100., 100.);
 
     *cam_q.into_inner() = Transform::from_xyz(0., 200., 0.).looking_at(Vec3::ZERO, Vec3::Y);
 
-    cmd.spawn((
-        Mesh3d(meshes.add(Sphere::new(1.0))),
-        MeshMaterial3d(materials.add(Color::WHITE)),
-        Cam1,
-        Transform::from_xyz(30., 50., 30.)
-    ));
+    // cmd.spawn((
+    //     Mesh3d(meshes.add(Sphere::new(1.0))),
+    //     MeshMaterial3d(materials.add(Color::WHITE)),
+    //     Cam1,
+    //     Transform::from_xyz(30., 50., 30.)
+    // ));
 }
 
 // ---
@@ -68,7 +68,7 @@ fn camera_moving (
     ;
 
     *minus_radius += 2. * time.delta_secs();
-    *minus_y += 6. * time.delta_secs();
+    *minus_y += 12. * time.delta_secs();
 
 
 }

@@ -9,8 +9,8 @@ use crate::shared::MessagesAddLine;
 
     
 
-pub struct InfoPlugin;
-impl Plugin for InfoPlugin {
+pub struct MessagesPlugin;
+impl Plugin for MessagesPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_systems(Update, (hide_container).run_if(any_with_component::<HideTime>))

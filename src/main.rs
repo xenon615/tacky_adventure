@@ -67,7 +67,7 @@ fn main() {
         damage::DamagePlugin,
 
         asteroid::AsteroidPlugin,
-        messages::InfoPlugin,
+        messages::MessagesPlugin,
         info::InfoPlugin,
     ))
     .add_plugins(
