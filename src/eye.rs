@@ -26,7 +26,10 @@ impl Plugin for EyesPlugin {
         ).run_if(resource_exists::<EnabledEyes>)) 
         .add_systems(Update, check_blink.run_if(any_with_component::<Blinking>))
         .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
-        .add_systems(Update, (startup, set_help).run_if(resource_added::<EnabledEyes>))
+        .add_systems(Update, (
+            startup
+            // , set_help
+        ).run_if(resource_added::<EnabledEyes>))
 
         ;
     }
@@ -366,15 +369,15 @@ fn check_ammo_load (
 
 // ---
 
-fn set_help(
-    mut cmd: Commands
-) {
-    cmd.trigger(MessagesAddLine::<MonologueCont>::new("What the hell is this? Are these guys going to attack me or help me? I don't know yet."));
-}
+// fn set_help(
+//     mut cmd: Commands
+// ) {
+//     cmd.trigger(MessagesAddLine::<MonologueCont>::new("What the hell is this? Are these guys going to attack me or help me? I don't know yet."));
+// }
 
 // ---
 
-const OPTION_INDEX: usize = 6;
+const OPTION_INDEX: usize = 4;
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,

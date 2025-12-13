@@ -76,7 +76,15 @@ impl FromWorld for MonoLines {
             ],
             vec![
                 "An elevator is not bad, I will build less."
+            ],
+            vec![
+                "What the hell is this?",
+                "Are these guys going to attack me or help me?",
+                "I don't know yet.",
+                "Well, we'll see.",
+                "Let them walk with me"
             ]
+
 
         ])
     }

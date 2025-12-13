@@ -10,7 +10,7 @@ use bevy_tnua::prelude::*;
 use bevy_tnua_avian3d::{*, TnuaAvian3dPlugin};
 
 use crate::{
-    monologue::MonologueCont, shared::{DamageCallback, DamageDeal, DamageDealed, GameState, HealthMax, NotReady, Targetable}, ui::{self, UiSlot}};
+    monologue::MonologueCont, platform, shared::{DamageCallback, DamageDeal, DamageDealed, GameState, HealthMax, NotReady, Targetable}, ui::{self, UiSlot}};
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
 use crate::shared:: {CastBuild, Damage, Player, MessagesAddLine};
@@ -24,7 +24,10 @@ impl Plugin for PlayerPlugin {
             TnuaAvian3dPlugin::new(FixedUpdate),
         ))
         .add_plugins(AnimatorHelperPlugin)
-        .add_systems(Startup, (startup, init_ui).after(ui::startup))
+        .add_systems(Startup, (startup, init_ui)
+            .after(ui::startup)
+            .after(platform::startup)
+        )
         .add_systems(FixedUpdate, (
             apply_controls,
             movement,
@@ -61,7 +64,7 @@ fn startup(
     all_animations.add("Player", "models/player.glb", 8, &mut graphs, &asset);
     cmd.spawn((
         SceneRoot(asset.load(GltfAssetLabel::Scene(0).from_asset("models/player.glb"))),
-        Transform::from_xyz(0., 0.1, 0.).looking_to(-Vec3::Z, Vec3::Y),
+        Transform::from_xyz(0., 10., 0.).looking_to(-Vec3::Z, Vec3::Y),
         Player,
         Targetable,
         AniData::new("Player", 7),

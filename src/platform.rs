@@ -82,7 +82,7 @@ fn gismos(
 
 // ---
 
-fn startup(
+pub fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<PlatformMaterial>>,
