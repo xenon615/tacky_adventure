@@ -77,7 +77,7 @@ fn hide_container (
 
     for  (ble, parent, mut ht) in &mut line_q  {
         ht.0.tick(time.delta());
-        let ee = lhm.entry(parent.0).or_insert((0,0));
+        let ee = lhm.entry(parent.0).or_insert((0, 0));
         ee.0 += 1;
         if ht.0.is_finished() {
             cmd.entity(ble).despawn();

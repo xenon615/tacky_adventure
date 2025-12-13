@@ -1,8 +1,9 @@
 
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 use bevy::{
-    color::palettes::css, prelude::*
+    color::palettes::css, prelude::*, time::common_conditions::on_timer
 };
+use bevy_gltf_animator_helper::AniData;
 
 use crate::{
     camera::Cam, messages::{HideTime, set_text}, shared::{MessagesAddLine, OptionIndex, Player}, ui
@@ -17,6 +18,15 @@ impl Plugin for MonologuePlugin {
         .add_systems(Startup, startup.after(ui::startup))
         .add_systems(Update, follow.run_if(any_with_component::<HideTime>))
         .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
+        .add_systems(
+            Update, 
+            read_mono_lines
+            .run_if(
+                not(resource_equals(MonoIndex(None))).and(
+                    on_timer(Duration::from_secs(5)).or(run_once)
+                )
+            )
+        )
         .add_observer(set_text::<MonologueCont>)
         ;
     }
@@ -27,18 +37,9 @@ impl Plugin for MonologuePlugin {
 #[derive(Component)]
 pub struct MonologueCont;
 
-// #[derive(Resource)]
-// pub struct MonoLines(HashMap<&'static str, Vec<&'static str>>);
+#[derive(Resource, Default, PartialEq)]
+pub struct MonoIndex(Option<usize>);
 
-// impl FromWorld for MonoLines {
-//     fn from_world(world: &mut World) -> Self {
-//         Self(HashMap::from(
-//             [
-//                 ("intro", vec!["Hi", "Hello!"])
-//             ]
-//         ))
-//     }
-// }
 
 #[derive(Resource)]
 pub struct MonoLines(Vec<Vec<&'static str>>);
@@ -55,7 +56,7 @@ impl FromWorld for MonoLines {
                 "Never mind, let's take a look around",
                 "A path leading to a strange, shimmering thing and overgrown flying dumplings.",
                 "Everything is pale, I'm the only one here, blue as an drunkard's nose on a winter morning.",
-                "Complete bad taste, in short",
+                "Complete bad taste, in short.",
                 "I guess I should go to that shimmering thing .."
             ]
         ])
@@ -67,6 +68,8 @@ impl FromWorld for MonoLines {
 fn startup(
     mut cmd: Commands
 ) {
+
+    cmd.init_resource::<MonoIndex>();
     cmd.spawn((
         MonologueCont,
         Node {
@@ -75,13 +78,13 @@ fn startup(
             border: UiRect::all(Val::Px(2.)),
             padding: UiRect::all(Val::Px(20.)),
             justify_content: JustifyContent::Start,
-            align_items: AlignItems::Center,
+            align_items: AlignItems::Start,
             ..default()
         },
         Visibility::Hidden,
         BackgroundColor(css::BLACK.with_alpha(0.9).into()),
         BorderRadius::all(Val::Px(15.)),
-        BorderColor::all(css::WHITE),
+        // BorderColor::all(css::WHITE),
     ));
 
 }
@@ -90,12 +93,14 @@ fn startup(
 
 #[allow(dead_code)]
 fn follow(
-    player_q: Single<&Transform, With<Player>>,   
+    player_q: Single<(&Transform, &AniData), With<Player>>,   
     ballon_q: Single<(&mut Node, &ComputedNode), With<MonologueCont>>,
     camera_query: Single<(&Camera, &GlobalTransform), With<Cam>>,
 ) {
     let (camera, camera_transform) = camera_query.into_inner();
-    let point = player_q.into_inner().translation + Vec3::Y * 3.;
+    let (player_t, ad) = player_q.into_inner();
+
+    let point = player_t.translation + Vec3::Y * if ad.animation_index != 7 {2.5} else {1.8};
 
     if let Ok(coords) = camera.world_to_viewport(camera_transform, point) {
         let (mut  b_node, b_cnode) = ballon_q.into_inner();
@@ -104,19 +109,48 @@ fn follow(
     }
 }
 
-
 // --
+
+// fn opt_index_changed(
+//     opt_index: Res<OptionIndex>,
+//     mut cmd: Commands,
+//     lines: Res<MonoLines>
+// ) {
+    
+//     if let Some(section) =  lines.0.get(opt_index.0) {
+//         for s in section {
+//             cmd.trigger(MessagesAddLine::<MonologueCont>::new(s));        
+//         }
+//     }
+// } 
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,
-    mut cmd: Commands,
-    lines: Res<MonoLines>
+    mut mono_index: ResMut<MonoIndex>
 ) {
-    
-    if let Some(section) =  lines.0.get(opt_index.0) {
-        for s in section {
-            cmd.trigger(MessagesAddLine::<MonologueCont>::new(s));        
-        }
-    }
+    mono_index.0 = Some(opt_index.0);
+}
 
-} 
+// ---
+
+fn read_mono_lines(
+    mut cmd: Commands,
+    mut mono_lines: ResMut<MonoLines>,
+    mut mono_index: ResMut<MonoIndex>
+) {
+
+    let Some(mi) = mono_index.0 else {
+        return;
+    };
+
+    if let Some(section) = mono_lines.0.get_mut(mi)  {
+        if !section.is_empty() {
+            let s = section.remove(0);
+            cmd.trigger(MessagesAddLine::<MonologueCont>::new(s).with_time(5));            
+        } else {
+            mono_index.0 = None;    
+        }
+    } else {
+        mono_index.0 = None;
+    }
+}

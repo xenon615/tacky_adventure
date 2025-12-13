@@ -32,7 +32,7 @@ impl Plugin for PlayerPlugin {
         ).in_set(TnuaUserControlsSystems))
         .add_systems(Update, timer.run_if(any_with_component::<NextAfter>))
         .add_observer(build_action)
-        .add_systems(OnEnter(GameState::Game), enter_game)
+        // .add_systems(OnEnter(GameState::Game), enter_game)
         .add_systems(Update, animation_changed)
         ;
     }
@@ -96,7 +96,7 @@ fn on_ready (
 }
 
 // ---
-
+#[allow(dead_code)]
 fn enter_game(
     mut cmd: Commands
 ) {
