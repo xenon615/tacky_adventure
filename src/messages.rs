@@ -40,11 +40,12 @@ pub fn set_text<T: Component>(
     let new_line = cmd.spawn(
         (
             Node {
-                width: Val::Percent(100.),
+                // width: Val::Percent(100.),
                 padding: UiRect::all(Val::Px(5.)),
                 margin: UiRect::bottom(Val::Px(5.)),
                  ..default()
             },
+            // BackgroundColor(Color::BLACK.with_alpha(0.5)),
             MessageLine,
             children![(
                 TextColor(if *count % 2 == 0 {Color::linear_rgb(0.4, 1.1, 0.0)} else {Color::linear_rgb(1.1, 1.1, 0.1)}),
@@ -63,10 +64,12 @@ pub fn set_text<T: Component>(
 // ---
 
 fn hide_container (
-    mut line_q: Query<(Entity, &ChildOf, &mut HideTime), With<HideTime>>,
+    mut line_q: Query<(Entity, &ChildOf, &mut HideTime, &Children), With<HideTime>>,
     mut cont_q: Query<&mut Visibility>,
     mut cmd: Commands,
-    time: Res<Time>
+    time: Res<Time>,
+    mut text_q: Query<&mut TextColor>
+
 ) {
    
     if line_q.is_empty() {
@@ -75,8 +78,19 @@ fn hide_container (
 
     let mut lhm: HashMap<Entity, (usize, usize)> = HashMap::new();
 
-    for  (ble, parent, mut ht) in &mut line_q  {
+    for  (ble, parent, mut ht, ch) in &mut line_q  {
         ht.0.tick(time.delta());
+
+        if ht.0.remaining_secs() < 1. {
+            let Ok(mut text_color) = text_q.get_mut(ch[0])  else {
+                continue;
+            };
+            let alpha = text_color.alpha() - 0.1;
+            text_color.set_alpha(alpha);
+
+        }
+
+
         let ee = lhm.entry(parent.0).or_insert((0, 0));
         ee.0 += 1;
         if ht.0.is_finished() {

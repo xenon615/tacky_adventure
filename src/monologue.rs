@@ -58,7 +58,26 @@ impl FromWorld for MonoLines {
                 "Everything is pale, I'm the only one here, blue as an drunkard's nose on a winter morning.",
                 "Complete bad taste, in short.",
                 "I guess I should go to that shimmering thing .."
+            ],
+            vec![
+                "Holy shit!",
+                "Goodbye, colorless world",
+                "Hello world of eye-bleeding colors and annoying flickering",
+                "I repeat, complete bad taste",
+                "Although what previously looked like dumplings...",
+                "Whatever..",
+                " ",
+                "Probably need to get to that flickering thing again that looks like crazy plasma",
+                "You can't just approach this thing, but something tells me it can be fixed.",
+            ],
+            vec![
+                "Now it's easier for me to understand where to go.",
+                "This is a really useful feature."
+            ],
+            vec![
+                "An elevator is not bad, I will build less."
             ]
+
         ])
     }
 }
@@ -74,15 +93,16 @@ fn startup(
         MonologueCont,
         Node {
             position_type: PositionType::Absolute,
+            width: Val::Percent(90.),
             flex_direction: FlexDirection::Column,
             border: UiRect::all(Val::Px(2.)),
             padding: UiRect::all(Val::Px(20.)),
-            justify_content: JustifyContent::Start,
-            align_items: AlignItems::Start,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
             ..default()
         },
         Visibility::Hidden,
-        BackgroundColor(css::BLACK.with_alpha(0.9).into()),
+        // BackgroundColor(css::BLACK.with_alpha(0.9).into()),
         BorderRadius::all(Val::Px(15.)),
         // BorderColor::all(css::WHITE),
     ));
@@ -111,19 +131,6 @@ fn follow(
 
 // --
 
-// fn opt_index_changed(
-//     opt_index: Res<OptionIndex>,
-//     mut cmd: Commands,
-//     lines: Res<MonoLines>
-// ) {
-    
-//     if let Some(section) =  lines.0.get(opt_index.0) {
-//         for s in section {
-//             cmd.trigger(MessagesAddLine::<MonologueCont>::new(s));        
-//         }
-//     }
-// } 
-
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,
     mut mono_index: ResMut<MonoIndex>
@@ -146,7 +153,7 @@ fn read_mono_lines(
     if let Some(section) = mono_lines.0.get_mut(mi)  {
         if !section.is_empty() {
             let s = section.remove(0);
-            cmd.trigger(MessagesAddLine::<MonologueCont>::new(s).with_time(5));            
+            cmd.trigger(MessagesAddLine::<MonologueCont>::new(s).with_time(4));            
         } else {
             mono_index.0 = None;    
         }

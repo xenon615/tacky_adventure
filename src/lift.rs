@@ -4,7 +4,8 @@ use avian3d::prelude::*;
 use bevy_hanabi::prelude::*;
 
 use crate:: {
-    effects::lift_steam, help::SetHelpData, info::InfoCont, shared::{MessagesAddLine, OptionIndex, Player, get_platform}
+    effects::lift_steam, help::SetHelpData, info::InfoCont, shared::{MessagesAddLine, OptionIndex, Player, get_platform},
+    monologue::MonologueCont
 };
 
 
@@ -84,7 +85,8 @@ fn switch_lift(
     effect_q: Single<(Entity, &mut EffectSpawner), With<LiftEffect>>,
     player_q: Single<&Transform, With<Player>>,
     spatiaal: SpatialQuery,
-    mut cmd: Commands
+    mut cmd: Commands,
+    mut done: Local<bool>
 ) {
 
     let player_t = player_q.into_inner();
@@ -120,6 +122,11 @@ fn switch_lift(
         es.active = false;
     }
     
+    if !*done {
+        cmd.trigger(MessagesAddLine::<MonologueCont>::new("Woo-hoo!").with_time(5));
+        *done = true;
+    }
+
 }
 
 
@@ -135,7 +142,7 @@ fn set_help(
 }
 
 
-const OPTION_INDEX: usize = 2;
+const OPTION_INDEX: usize = 3;
 
 fn opt_index_changed(
     opt_index: Res<OptionIndex>,

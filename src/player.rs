@@ -61,7 +61,7 @@ fn startup(
     all_animations.add("Player", "models/player.glb", 8, &mut graphs, &asset);
     cmd.spawn((
         SceneRoot(asset.load(GltfAssetLabel::Scene(0).from_asset("models/player.glb"))),
-        Transform::from_xyz(0., 10., 0.).looking_to(-Vec3::Z, Vec3::Y),
+        Transform::from_xyz(0., 0.1, 0.).looking_to(-Vec3::Z, Vec3::Y),
         Player,
         Targetable,
         AniData::new("Player", 7),
@@ -197,9 +197,15 @@ fn animate(
 fn build_action(
     _tr: On<CastBuild>,
     ad_q: Single<&mut AniData, With<Player>>,
+    mut done: Local<bool>,
+    mut cmd: Commands
  ) {
     let mut ad = ad_q.into_inner();
     ad.animation_index = 4;
+    if !*done {
+        cmd.trigger(MessagesAddLine::<MonologueCont>::new("Wow!! Look Mom, I'm a builder.").with_time(5));
+        *done = true;
+    }
 }
 
 // ---
@@ -274,7 +280,7 @@ fn animation_changed(
     let (e, ad) = player_q.into_inner();
 
     if ad.animation_index == 0 {
-        cmd.entity(e).insert(NextAfter(Timer::new(Duration::from_secs(10), TimerMode::Once), 7));
+        cmd.entity(e).insert(NextAfter(Timer::new(Duration::from_secs(20), TimerMode::Once), 7));
     }  else if ad.animation_index == 4 {
         cmd.entity(e).insert(NextAfter(Timer::new(Duration::from_millis(500), TimerMode::Once), 0));    
     } else if ad.animation_index == 5 {
