@@ -6,7 +6,10 @@ use bevy::{
     color::palettes::css
 };
 
-use crate::{info::InfoCont, monologue::MonologueCont, shared::{MessagesAddLine, OptionIndex, Player, Shot, Target, TargetedBy, Threat, vec_rnd}};
+use crate::{
+    monologue::MonoLines,
+    shared::{StageIndex, Player, Shot, Target, TargetedBy, Threat, vec_rnd}
+};
 
 // ---
 
@@ -25,11 +28,8 @@ impl Plugin for EyesPlugin {
             aiming.run_if(any_with_component::<Target>)
         ).run_if(resource_exists::<EnabledEyes>)) 
         .add_systems(Update, check_blink.run_if(any_with_component::<Blinking>))
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
-        .add_systems(Update, (
-            startup
-            // , set_help
-        ).run_if(resource_added::<EnabledEyes>))
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
+        .add_systems(Update, (startup, add_lines).run_if(resource_added::<EnabledEyes>))
 
         ;
     }
@@ -369,18 +369,24 @@ fn check_ammo_load (
 
 // ---
 
-// fn set_help(
-//     mut cmd: Commands
-// ) {
-//     cmd.trigger(MessagesAddLine::<MonologueCont>::new("What the hell is this? Are these guys going to attack me or help me? I don't know yet."));
-// }
+fn add_lines(
+    mut mono_lines: ResMut<MonoLines>
+) {
+    mono_lines.0 =  vec![
+        "What the hell is this?",
+        "Are these guys going to attack me or help me?",
+        "I don't know yet.",
+        "Well, we'll see.",
+        "Let them walk with me"
+    ];
+}
 
 // ---
 
 const OPTION_INDEX: usize = 4;
 
 fn opt_index_changed(
-    opt_index: Res<OptionIndex>,
+    opt_index: Res<StageIndex>,
     mut cmd: Commands
 ) {
     if opt_index.0 == OPTION_INDEX {

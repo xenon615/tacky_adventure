@@ -14,7 +14,7 @@ use avian3d::{
 use crate::shared::{
     GameState,
     NotReady,
-    OptionIndex
+    StageIndex
 };
 
 mod shared;
@@ -24,7 +24,7 @@ mod env;
 mod ui;
 mod player;
 mod platform;
-mod exit;
+mod stage;
 mod monologue;
 mod help;
 mod lift;
@@ -38,6 +38,7 @@ mod asteroid;
 mod messages;
 mod info;
 mod intro;
+// mod feature;
 
 fn main() {
     let mut app = App::new();
@@ -47,14 +48,14 @@ fn main() {
         DefaultPlugins,
         PhysicsPlugins::default(),
         HanabiPlugin,
-        camera::CameraPlugin,
-        env::EnvPlugin,
     ))
     .add_plugins((
+        camera::CameraPlugin,
+        env::EnvPlugin,
         ui::UiPlugin,
         player::PlayerPlugin,
         platform::PlatformPlugin,
-        exit::ExitPlugin,
+        stage::StagePlugin,
 
         monologue::MonologuePlugin,
         help:: HelpPlugin,
@@ -66,18 +67,21 @@ fn main() {
         missile::MissilePlugin,
         damage::DamagePlugin,
 
+
+    ))
+    .add_plugins((
+        intro::IntroPlugin,
         asteroid::AsteroidPlugin,
         messages::MessagesPlugin,
-        info::InfoPlugin,
+        info::InfoPlugin,        
+        // feature::FeaturePlugin
+
     ))
-    .add_plugins(
-        intro::IntroPlugin
-    )
     // .add_plugins(PhysicsDebugPlugin::default())
     // .add_plugins(EguiPlugin::default() )
     // .add_plugins(WorldInspectorPlugin::new())
     .init_state::<GameState>()
-    .init_resource::<OptionIndex>()
+    .init_resource::<StageIndex>()
     .add_systems(Update, check_ready.run_if(in_state(GameState::Loading)))
     
     .run()

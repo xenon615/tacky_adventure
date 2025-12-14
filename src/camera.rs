@@ -15,7 +15,7 @@ use bevy::{
 use avian3d::prelude::PhysicsSystems;
 // use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
-use crate::shared::{GameState, OptionIndex, Player};
+use crate::shared::{GameState, StageIndex, Player};
 
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
@@ -39,7 +39,7 @@ impl Plugin for CameraPlugin {
             .run_if(in_state(GameState::Game))
         ) 
         .add_observer(cam_reset)   
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
         ; 
     }
 } 
@@ -156,7 +156,7 @@ fn opt_index_changed (
     mut cmd: Commands,
     assets: ResMut<AssetServer> ,
     cam_q: Single<Entity, With<Cam>>,
-    opt_index: Res<OptionIndex>
+    opt_index: Res<StageIndex>
 ) {
 
     if opt_index.0 == 1 {

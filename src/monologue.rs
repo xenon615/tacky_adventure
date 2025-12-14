@@ -6,7 +6,7 @@ use bevy::{
 use bevy_gltf_animator_helper::AniData;
 
 use crate::{
-    camera::Cam, messages::{HideTime, set_text}, shared::{MessagesAddLine, OptionIndex, Player}, ui
+    camera::Cam, messages::{HideTime, set_text}, shared::{MessagesAddLine, Player}, ui
 };
     
 
@@ -17,16 +17,8 @@ impl Plugin for MonologuePlugin {
         .init_resource::<MonoLines>()
         .add_systems(Startup, startup.after(ui::startup))
         .add_systems(Update, follow.run_if(any_with_component::<HideTime>))
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
-        .add_systems(
-            Update, 
-            read_mono_lines
-            .run_if(
-                not(resource_equals(MonoIndex(None))).and(
-                    on_timer(Duration::from_secs(5)).or(run_once)
-                )
-            )
-        )
+        .add_systems(Update, send_line.run_if( resource_exists_and_equals(MonoActive(true)).and( on_timer(Duration::from_secs(5)).or(run_once))))
+        .add_systems(Update, lines_added.run_if(resource_exists_and_changed::<MonoLines>.and(resource_exists::<MonoActive>)))
         .add_observer(set_text::<MonologueCont>)
         ;
     }
@@ -37,58 +29,12 @@ impl Plugin for MonologuePlugin {
 #[derive(Component)]
 pub struct MonologueCont;
 
-#[derive(Resource, Default, PartialEq)]
-pub struct MonoIndex(Option<usize>);
 
+#[derive(Resource, Default)]
+pub struct MonoLines(pub Vec<&'static str>);
 
-#[derive(Resource)]
-pub struct MonoLines(Vec<Vec<&'static str>>);
-
-impl FromWorld for MonoLines {
-    fn from_world(_world: &mut World) -> Self {
-        Self(vec![
-            vec![
-                "What a strange place?",
-                "I wonder how I ended up here.",
-                "Probably again the fault of this idiot who thinks he is able to create realities.",
-                "what the fuck is his name?",
-                "God, demiurge, Sir Max?",
-                "Never mind, let's take a look around",
-                "A path leading to a strange, shimmering thing and overgrown flying dumplings.",
-                "Everything is pale, I'm the only one here, blue as an drunkard's nose on a winter morning.",
-                "Complete bad taste, in short.",
-                "I guess I should go to that shimmering thing .."
-            ],
-            vec![
-                "Holy shit!",
-                "Goodbye, colorless world",
-                "Hello world of eye-bleeding colors and annoying flickering",
-                "I repeat, complete bad taste",
-                "Although what previously looked like dumplings...",
-                "Whatever..",
-                " ",
-                "Probably need to get to that flickering thing again that looks like crazy plasma",
-                "You can't just approach this thing, but something tells me it can be fixed.",
-            ],
-            vec![
-                "Now it's easier for me to understand where to go.",
-                "This is a really useful feature."
-            ],
-            vec![
-                "An elevator is not bad, I will build less."
-            ],
-            vec![
-                "What the hell is this?",
-                "Are these guys going to attack me or help me?",
-                "I don't know yet.",
-                "Well, we'll see.",
-                "Let them walk with me"
-            ]
-
-
-        ])
-    }
-}
+#[derive(Resource, PartialEq, Default)]
+pub struct MonoActive(bool);
 
 // ---
 
@@ -96,7 +42,7 @@ fn startup(
     mut cmd: Commands
 ) {
 
-    cmd.init_resource::<MonoIndex>();
+    cmd.init_resource::<MonoActive>();
     cmd.spawn((
         MonologueCont,
         Node {
@@ -139,33 +85,57 @@ fn follow(
 
 // --
 
-fn opt_index_changed(
-    opt_index: Res<OptionIndex>,
-    mut mono_index: ResMut<MonoIndex>
-) {
-    mono_index.0 = Some(opt_index.0);
-}
+// fn opt_index_changed(
+//     opt_index: Res<StageIndex>,
+//     mut mono_index: ResMut<MonoIndex>
+// ) {
+//     mono_index.0 = Some(opt_index.0);
+// }
 
 // ---
 
-fn read_mono_lines(
+// fn read_mono_lines(
+//     mut cmd: Commands,
+//     mut mono_lines: ResMut<MonoLines>,
+//     mut mono_index: ResMut<MonoIndex>
+// ) {
+
+//     let Some(mi) = mono_index.0 else {
+//         return;
+//     };
+
+//     if let Some(section) = mono_lines.0.get_mut(mi)  {
+//         if !section.is_empty() {
+//             let s = section.remove(0);
+//             cmd.trigger(MessagesAddLine::<MonologueCont>::new(s).with_time(4));            
+//         } else {
+//             mono_index.0 = None;    
+//         }
+//     } else {
+//         mono_index.0 = None;
+//     }
+// }
+
+fn send_line(
     mut cmd: Commands,
     mut mono_lines: ResMut<MonoLines>,
-    mut mono_index: ResMut<MonoIndex>
+    mut mono_active: ResMut<MonoActive>,
 ) {
-
-    let Some(mi) = mono_index.0 else {
-        return;
-    };
-
-    if let Some(section) = mono_lines.0.get_mut(mi)  {
-        if !section.is_empty() {
-            let s = section.remove(0);
-            cmd.trigger(MessagesAddLine::<MonologueCont>::new(s).with_time(4));            
-        } else {
-            mono_index.0 = None;    
-        }
+    if let Some(line) = mono_lines.0.get(0) {
+        cmd.trigger(MessagesAddLine::<MonologueCont>::new(line).with_time(4));
+        mono_lines.0.remove(0);
     } else {
-        mono_index.0 = None;
+        mono_active.0 = false;
+    };
+}
+
+
+
+fn lines_added(
+    mut mono_active: ResMut<MonoActive>,
+    mono_lines: Res<MonoLines>
+) {
+    if  !mono_active.0  && !mono_lines.0.is_empty() {
+        mono_active.0 = true;
     }
 }

@@ -4,8 +4,8 @@ use avian3d::prelude::*;
 use bevy_hanabi::prelude::*;
 
 use crate:: {
-    effects::lift_steam, help::SetHelpData, info::InfoCont, shared::{MessagesAddLine, OptionIndex, Player, get_platform},
-    monologue::MonologueCont
+    effects::lift_steam, help::SetHelpData, info::InfoCont, shared::{MessagesAddLine, StageIndex, Player, get_platform},
+    monologue::{MonologueCont, MonoLines}
 };
 
 
@@ -16,7 +16,7 @@ impl Plugin for LiftPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_systems(Update, move_lift.run_if(any_with_component::<Lift>))
-        .add_systems(Update, (prepare_effect, set_help).run_if(resource_added::<EnabledLift>))
+        .add_systems(Update, (prepare_effect, set_help, add_lines).run_if(resource_added::<EnabledLift>))
         .add_systems(Update, opt_index_changed)
         .add_systems(Update, switch_lift
             .run_if(input_just_pressed(KeyCode::KeyL))
@@ -141,11 +141,21 @@ fn set_help(
     cmd.trigger(MessagesAddLine::<InfoCont>::new("Lift is available, check out the help"));
 }
 
+// ---
+
+fn add_lines(
+    mut mono_lines: ResMut<MonoLines>
+) {
+    mono_lines.0 =  vec![
+        "An lift is not bad, I will build less."
+    ];
+}
+
 
 const OPTION_INDEX: usize = 3;
 
 fn opt_index_changed(
-    opt_index: Res<OptionIndex>,
+    opt_index: Res<StageIndex>,
     mut cmd: Commands
 ) {
     if opt_index.0 == OPTION_INDEX {

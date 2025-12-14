@@ -4,16 +4,16 @@ use bevy::{
    shader::ShaderRef
 };
 use avian3d::prelude::*;
-use crate::shared::{vec_rnd, Exit,  OptionIndex, Player};
+use crate::shared::{vec_rnd, Exit,  StageIndex, Player};
 
-pub struct ExitPlugin;
-impl Plugin for ExitPlugin {
+pub struct StagePlugin;
+impl Plugin for StagePlugin {
     fn build(&self, app: &mut App) {
         app
-        .add_plugins(MaterialPlugin::<ExitMaterial>::default())
+        .add_plugins(MaterialPlugin::<StageStoneMaterial>::default())
         .add_systems(Startup, start)
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
-        .add_systems(Update, move_exit.run_if(any_with_component::<MoveExit>))
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
+        .add_systems(Update, move_exit.run_if(any_with_component::<MoveStageStone>))
         ;  
     }
 }
@@ -21,7 +21,7 @@ impl Plugin for ExitPlugin {
 
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-pub struct ExitMaterial {
+pub struct StageStoneMaterial {
     // #[uniform(0)]
     // color: LinearRgba,
     #[uniform(0)]
@@ -29,7 +29,7 @@ pub struct ExitMaterial {
 }
 
 
-impl Material for ExitMaterial {
+impl Material for StageStoneMaterial {
     fn fragment_shader() -> ShaderRef {
         "shaders/exit.wgsl".into()
     }
@@ -42,20 +42,20 @@ impl Material for ExitMaterial {
 // ---
 
 #[derive(Resource)]
-pub struct ExitMaterialHandle(Handle<ExitMaterial>);
+pub struct StageStoneMaterialHandle(Handle<StageStoneMaterial>);
 
 #[derive(Component)]
-struct MoveExit(Vec3);
+struct MoveStageStone(Vec3);
 
 // ---
 
 fn start(
     mut cmd : Commands,
-    mut materials: ResMut<Assets<ExitMaterial>>,
+    mut materials: ResMut<Assets<StageStoneMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let emh = materials.add(ExitMaterial {stage_index: 0});
-    cmd.insert_resource(ExitMaterialHandle(emh.clone()));
+    let emh = materials.add(StageStoneMaterial {stage_index: 0});
+    cmd.insert_resource(StageStoneMaterialHandle(emh.clone()));
     cmd.spawn((
         Exit,
         Mesh3d(meshes.add(Cuboid::from_length(4.))),
@@ -77,7 +77,7 @@ fn start(
 fn on_collide(
     tr: On<CollisionStart>,
     tr_q: Single<&mut AngularVelocity, With<Exit>>,
-    mut option_index: ResMut<OptionIndex>,
+    mut stage_index: ResMut<StageIndex>,
     player_q: Query<&Player>,
     mut cmd: Commands
 ) {
@@ -86,22 +86,19 @@ fn on_collide(
     if player_q.get(body2).is_err() {
         return;
     }
-    option_index.0 += 1;
-    // println!("------option index----- {}", option_index.0);
-    let max = if option_index.0 > 2 {40} else {20};
+    stage_index.0 += 1;
+    let max = if stage_index.0 > 2 {40} else {20};
     let Some(me) = tr.body1 else {return;};
     tr_q.into_inner().0 = Vec3::Y * 2.;
-    cmd.entity(me).insert(MoveExit(vec_rnd(-max .. max, 0 .. max, -max .. max)));
-    // cmd.entity(me).remove::<Sensor>();
+    cmd.entity(me).insert(MoveStageStone(vec_rnd(-max .. max, 0 .. max, -max .. max)));
 }
-
 
 // ---
 
 fn opt_index_changed(
-    mh: Res<ExitMaterialHandle>,
-    mut materials: ResMut<Assets<ExitMaterial>>,
-    opt_index: Res<OptionIndex>
+    mh: Res<StageStoneMaterialHandle>,
+    mut materials: ResMut<Assets<StageStoneMaterial>>,
+    opt_index: Res<StageIndex>
 ) {
     if opt_index.0 == 1 {
         let Some(m) = materials.get_mut(&mh.0) else {
@@ -116,12 +113,12 @@ fn opt_index_changed(
 
 fn move_exit(
     mut cmd : Commands,
-    tr_q: Single<(Entity, &mut Transform, &mut AngularVelocity, &MoveExit), With<Exit>>,  
+    tr_q: Single<(Entity, &mut Transform, &mut AngularVelocity, &MoveStageStone), With<Exit>>,  
     time: Res<Time>
 ) {
     let (e, mut trans, mut av, me) =  tr_q.into_inner();
     if trans.translation.distance_squared(me.0) < 0.2 {
-        cmd.entity(e).remove::<MoveExit>();
+        cmd.entity(e).remove::<MoveStageStone>();
         // cmd.entity(e).insert(Sensor);
         av.0 = Vec3::ZERO;
     } else {

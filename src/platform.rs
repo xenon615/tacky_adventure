@@ -8,7 +8,10 @@ use bevy::{
 use avian3d::{math::Quaternion, prelude::*};
 
 use crate::{
-    help::SetHelpData, info::InfoCont, shared::{CastBuild, Exit, GameState, MessagesAddLine, OptionIndex, PLATFORM_DIM, Player, get_platform}
+    help::SetHelpData, 
+    info::InfoCont, 
+    shared::{CastBuild, Exit, GameState, MessagesAddLine, StageIndex, PLATFORM_DIM, Player, get_platform},
+    monologue::MonoLines
 };
 
 pub struct PlatformPlugin;
@@ -16,16 +19,15 @@ impl Plugin for PlatformPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_plugins(MaterialPlugin::<PlatformMaterial>::default())
-        // .add_systems(Startup, startup)
         .add_systems(OnEnter(GameState::Intro), startup)
-        .add_systems(Update, (change_color, set_help).chain().run_if(resource_added::<EnabledBuild>))
+        .add_systems(Update, (change_color, set_help, add_lines).run_if(resource_added::<EnabledBuild>))
         .add_systems(
             Update, apply_keys.run_if(
                 resource_exists::<EnabledBuild>
                 .and(resource_changed::<ButtonInput<KeyCode>>)
             )
         )
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
+        .add_systems(Update, stage_index_changed.run_if(resource_changed::<StageIndex>))
         ;
     }
 }
@@ -250,10 +252,31 @@ fn set_help(
 
 // --
 
+fn add_lines(
+    mut mono_lines: ResMut<MonoLines>
+) {
+    mono_lines.0 = 
+    vec![
+        "Holy shit!",
+        "Goodbye, colorless world",
+        "Hello world of eye-bleeding colors and annoying flickering",
+        "I repeat, complete bad taste",
+        "Although what previously looked like dumplings...",
+        "Whatever..",
+        " ",
+        "Probably need to get to that flickering thing again that looks like crazy plasma",
+        "You can't just approach this thing, but something tells me it can be fixed.",
+    ];
+    // .iter().for_each(| l | mono_lines.0.push(l)); 
+}
+
+
+// --
+
 const OPTION_INDEX: usize = 1;
 
-fn opt_index_changed(
-    opt_index: Res<OptionIndex>,
+fn stage_index_changed(
+    opt_index: Res<StageIndex>,
     mut cmd: Commands
 ) {
     if opt_index.0 == OPTION_INDEX {

@@ -2,13 +2,14 @@ use bevy::{color::palettes, prelude::*};
 
 use crate::{
     camera::Cam, 
-    shared::{GameState, Player}
+    shared::{GameState, Player},
+    monologue::MonoLines
 };
 pub struct IntroPlugin;
 impl Plugin for IntroPlugin {
     fn build(&self, app: &mut App) {
         app
-        .add_systems(OnEnter(GameState::Intro), startup)
+        .add_systems(OnEnter(GameState::Intro), (startup, add_lines))
         .add_systems(FixedUpdate, camera_moving.run_if(in_state(GameState::Intro)))
         ;
     }
@@ -16,25 +17,31 @@ impl Plugin for IntroPlugin {
 
 // ---
 
-// #[derive(Component)]
-// struct Cam1;
-
 fn startup(
     cam_q: Single<&mut Transform, With<Cam>>,
-    // mut cmd: Commands,
-    // mut meshes: ResMut<Assets<Mesh>>,
-    // mut materials: ResMut<Assets<StandardMaterial>>,
+    
 ) {
-    // cam_q.into_inner().translation = Vec3::new(100., 100., 100.);
-
     *cam_q.into_inner() = Transform::from_xyz(0., 200., 0.).looking_at(Vec3::ZERO, Vec3::Y);
+}
 
-    // cmd.spawn((
-    //     Mesh3d(meshes.add(Sphere::new(1.0))),
-    //     MeshMaterial3d(materials.add(Color::WHITE)),
-    //     Cam1,
-    //     Transform::from_xyz(30., 50., 30.)
-    // ));
+// ---
+
+fn add_lines(
+    mut mono_lines: ResMut<MonoLines>
+) {
+    mono_lines.0 = vec![
+        "What a strange place?",
+        "I wonder how I ended up here.",
+        "Probably again the fault of this idiot who thinks he is able to create realities.",
+        "what the fuck is his name?",
+        "God, demiurge, Sir Max?",
+        "Never mind, let's take a look around",
+        "A path leading to a strange, shimmering thing and overgrown flying dumplings.",
+        "Everything is pale, I'm the only one here, blue as an drunkard's nose on a winter morning.",
+        "Complete bad taste, in short.",
+        "I guess I should go to that shimmering thing .."
+    ];
+    // ].iter().for_each(| l | mono_lines.0.push(l)); 
 }
 
 // ---

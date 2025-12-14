@@ -5,7 +5,7 @@ use bevy:: {
 
 use noise::{BasicMulti, Perlin, NoiseFn};
 use std::ops::{Add, Mul};
-use crate::shared::{fibonacci_sphere, OptionIndex};
+use crate::shared::{fibonacci_sphere, StageIndex};
 
 
 
@@ -15,7 +15,7 @@ impl Plugin for AsteroidPlugin {
         app
         .add_systems(Startup, startup)
         .add_systems(Update, movement)
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
         ;
     }
 }
@@ -98,7 +98,7 @@ const OPTION_INDEX: usize = 1;
 fn opt_index_changed(
     mh: Res<AsteroidMaterial>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    opt_index: Res<OptionIndex>,
+    opt_index: Res<StageIndex>,
 ) {
     if opt_index.0 == OPTION_INDEX {
         if let Some(m) = materials.get_mut(&mh.0) {

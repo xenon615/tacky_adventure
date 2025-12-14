@@ -1,16 +1,19 @@
 use bevy::prelude::*;
+use crate:: {
+    help::SetHelpData,
+    info::InfoCont,
+    shared::{StageIndex,  MessagesAddLine, Player, Exit}, 
+    ui::UiSlot,
+    monologue::MonoLines
+};
 
-use crate::help::SetHelpData;
-use crate::info::InfoCont;
-use crate::shared::Exit;
-use crate::{shared::{OptionIndex,  MessagesAddLine, Player}, ui::UiSlot};
 pub struct AimerPlugin;
 impl Plugin for AimerPlugin {
     fn build(&self, app: &mut App) {
         app
         .add_systems(Startup, startup)
-        .add_systems(Update, (init_ui, set_help).run_if(resource_added::<EnabledAimer>))
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<OptionIndex>))
+        .add_systems(Update, (init_ui, set_help, add_lines).run_if(resource_added::<EnabledAimer>))
+        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
         .add_systems(Update, update_aimer.run_if(resource_exists::<EnabledAimer>))
         ;
         
@@ -128,10 +131,21 @@ fn update_aimer(
 const OPTION_INDEX: usize = 2;
 
 fn opt_index_changed(
-    opt_index: Res<OptionIndex>,
+    opt_index: Res<StageIndex>,
     mut cmd: Commands
 ) {
     if opt_index.0 == OPTION_INDEX {
         cmd.insert_resource(EnabledAimer);
     }
 } 
+
+// ---
+
+fn add_lines(
+    mut mono_lines: ResMut<MonoLines>
+) {
+    mono_lines.0 =  vec![
+        "Now it's easier for me to understand where to go.",
+        "This is a really useful feature."
+    ];
+}

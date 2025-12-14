@@ -68,7 +68,6 @@ impl <T>MessagesAddLine<T>  {
     }
 }
 
-
 // --
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default, States)]
@@ -81,7 +80,7 @@ pub enum GameState {
 }
 
 #[derive(Resource, Default)]
-pub struct OptionIndex(pub usize);
+pub struct StageIndex(pub usize);
 
 // --
 
