@@ -1,13 +1,13 @@
-use std::time::Duration;
+use std::{
+    time::Duration,
+    marker::PhantomData
+};
 
 use bevy::{
     platform::collections::HashMap, 
     prelude::*
 };
-
-use crate::shared::MessagesAddLine;
-
-    
+  
 
 pub struct MessagesPlugin;
 impl Plugin for MessagesPlugin {
@@ -19,6 +19,21 @@ impl Plugin for MessagesPlugin {
 }
 
 // ---
+
+#[derive(Event)]
+pub struct MessagesAddLine<T>{pub text: &'static str, pub time: u64, _marker: PhantomData<T>}
+
+impl <T>MessagesAddLine<T>  {
+    pub fn new(text: &'static str) -> Self {
+        Self { text , time: 10, _marker: PhantomData::<T>}
+    }
+
+    pub fn with_time(mut self, time: u64) -> Self {
+        self.time = time;
+        self
+    }
+}
+
 
 #[derive(Component)]
 pub struct MessageLine;

@@ -10,8 +10,11 @@ use avian3d::{math::Quaternion, prelude::*};
 use crate::{
     help::SetHelpData, 
     info::InfoCont, 
-    shared::{CastBuild, Exit, GameState, MessagesAddLine, StageIndex, PLATFORM_DIM, Player, get_platform, stage_index_changed},
-    monologue::MonoLines
+    shared::GameState,
+    monologue::MonoLines,
+    player::{CastBuild, Player},
+    messages::MessagesAddLine,
+    stage::{StageIndex, stage_index_changed}
 };
 
 pub struct PlatformPlugin;
@@ -69,21 +72,6 @@ struct EnabledBuild;
 
 // ---
 
-#[allow(dead_code)]
-fn gismos(
-    mut gizmos: Gizmos,
-    t_q: Query<&Transform, Or<(With<Platform>, With<Exit>)>>,
-    // t_q: Query<&Transform, With<Player>>
-) {
-    for t in &t_q {
-        gizmos.ray(t.translation, t.forward() * PLATFORM_DIM.z /2., Color::srgb(0., 0., 1.));
-        gizmos.ray(t.translation, t.right() * PLATFORM_DIM.z /2., Color::srgb(1., 0., 0.));
-        gizmos.ray(t.translation, t.up() * PLATFORM_DIM.z /2., Color::srgb(0., 1., 0.));
-    }
-}
-
-// ---
-
 pub fn startup(
     mut cmd: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -122,7 +110,21 @@ enum BuildAction {
     None
 }
 
+
+pub const PLATFORM_DIM: Vec3 = Vec3::new(10., 0.1, 10.);
+
 // ---
+
+pub fn get_platform(pt: &Transform, raycast_q: &SpatialQuery) -> Option<RayHitData> {
+    raycast_q.cast_ray(
+        pt.translation + pt.down() * 0.01, 
+        Dir3::NEG_Y,
+        f32::MAX,
+        false, 
+        &SpatialQueryFilter::default()
+    )
+}
+
 
 fn apply_keys(
     player_q: Single<(Entity, &Transform), With<Player>>,

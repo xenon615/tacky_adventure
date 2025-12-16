@@ -1,24 +1,8 @@
 use bevy::prelude::*;
-use avian3d::prelude::*;
-use std::{marker::PhantomData, ops::Range};
-
+use std::ops::Range;
 
 #[derive(Component)]
 pub struct NotReady;
-
-#[derive(Event)]
-pub struct CastBuild;
-
-#[derive(Component)]
-pub struct Player;
-
-
-#[derive(Event, Debug)]
-pub struct Shot {
-    pub position: Vec3,
-    pub direction: Dir3
-}
-
 
 #[derive(Component, Default)]
 pub struct Threat;
@@ -27,46 +11,11 @@ pub struct Threat;
 pub struct Target(pub Entity);
 
 #[derive(Component, Default, Clone)]
-pub struct Damage(pub f32);
-
-#[derive(Component)]
-pub struct DamageDeal(pub f32);
-
-#[derive(Component)]
-pub struct DamageCallback;
-
-#[derive(EntityEvent)]
-pub struct DamageDealed{pub entity: Entity}
-
-
-
-#[derive(Component)]
-#[require(Damage)]
-pub struct HealthMax(pub f32);
-
-#[derive(Component, Default, Clone)]
 pub struct TargetedBy(pub Vec<Entity>);
 
 #[derive(Component, Default, Clone)]
 #[require(TargetedBy)]
 pub struct Targetable;
-
-#[derive(Component)]
-pub struct LifeTime(pub Timer);
-
-#[derive(Event)]
-pub struct MessagesAddLine<T>{pub text: &'static str, pub time: u64, _marker: PhantomData<T>}
-
-impl <T>MessagesAddLine<T>  {
-    pub fn new(text: &'static str) -> Self {
-        Self { text , time: 10, _marker: PhantomData::<T>}
-    }
-
-    pub fn with_time(mut self, time: u64) -> Self {
-        self.time = time;
-        self
-    }
-}
 
 // --
 
@@ -78,30 +27,8 @@ pub enum GameState {
     Game,
     Over
 }
-
-#[derive(Resource, Default)]
-pub struct StageIndex(pub usize);
-
-// --
-
-pub const PLATFORM_DIM: Vec3 = Vec3::new(10., 0.1, 10.);
-
-#[derive(Component)]
-pub struct Exit;
-
 // ---
 
-pub fn get_platform(pt: &Transform, raycast_q: &SpatialQuery) -> Option<RayHitData> {
-    raycast_q.cast_ray(
-        pt.translation + pt.down() * 0.01, 
-        Dir3::NEG_Y,
-        f32::MAX,
-        false, 
-        &SpatialQueryFilter::default()
-    )
-}
-
-// ---
 #[allow(dead_code)]
 pub fn fibonacci_sphere(count: usize) -> impl Iterator<Item = Vec3> {
     let phi = std::f32::consts::PI * (5.0_f32.sqrt() - 1.);
@@ -144,16 +71,3 @@ pub fn vec_rnd(rx: Range<i32>, ry: Range<i32>, rz: Range<i32>) -> Vec3{
         fastrand::i32(rz) as _
     )
 }
-
-// ---
-
-
-
-pub fn stage_index_changed<const STAGE_INDEX: usize, T: Resource + Default> (
-    stage_index: Res<StageIndex>,
-    mut cmd: Commands
-) {
-    if stage_index.0 == STAGE_INDEX {
-        cmd.init_resource::<T>();
-    }
-} 

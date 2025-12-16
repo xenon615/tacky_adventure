@@ -1,8 +1,6 @@
 use std::time::Duration;
-
 use avian3d::prelude::*;
 use bevy::{
-    // gizmos, 
     prelude::*, 
     scene::SceneInstanceReady
 };
@@ -13,11 +11,12 @@ use crate::{
     monologue::MonologueCont,
     info::InfoCont, 
     platform, 
-    shared::{DamageCallback, DamageDeal, DamageDealed, GameState, HealthMax, NotReady, Targetable},
-    ui::{self, UiSlot}};
+    shared::{GameState, NotReady, Targetable},
+    damage::{DamageInfo, DamageDeal, DamageDealed, HealthMax, Damage},
+    messages::MessagesAddLine,
+    ui::{self, UiSlot}
+};
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
-
-use crate::shared:: {CastBuild, Damage, Player, MessagesAddLine};
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
@@ -51,6 +50,12 @@ impl Plugin for PlayerPlugin {
 
 // ---
 
+#[derive(Event)]
+pub struct CastBuild;
+
+#[derive(Component)]
+pub struct Player;
+
 #[derive(Component)]
 pub struct Movement {
     direction: i8,
@@ -74,7 +79,7 @@ fn startup(
         SceneRoot(asset.load(GltfAssetLabel::Scene(0).from_asset("models/player.glb"))),
         Transform::from_xyz(0., 10., 0.).looking_to(-Vec3::Z, Vec3::Y),
         Player,
-        Targetable,
+        // Targetable,
         AniData::new("Player", 7),
         TnuaController::default(),
         TnuaAvian3dSensorShape(Collider::cylinder(0.49, 0.0)),
@@ -87,7 +92,7 @@ fn startup(
         HealthMax(100.),
         CollisionEventsEnabled,
         DamageDeal(1.),
-        DamageCallback,
+        DamageInfo,
      ))
      .insert(NotReady)
      .observe(on_ready)

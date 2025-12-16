@@ -2,8 +2,9 @@ use bevy::prelude::*;
 
 use crate::{
     camera::Cam, 
-    shared::{GameState, Player},
-    monologue::MonoLines
+    shared::GameState,
+    monologue::MonoLines,
+    player::Player
 };
 pub struct IntroPlugin;
 impl Plugin for IntroPlugin {

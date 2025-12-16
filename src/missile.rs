@@ -5,8 +5,10 @@ use bevy::{
 use avian3d::prelude::*;
 use bevy_hanabi::{EffectAsset, EffectMaterial, EffectSpawner, ParticleEffect};
 
-use crate::shared::{DamageDeal, HealthMax, LifeTime, Shot}; 
-use crate::effects::{blast, jet_stream};
+use crate:: {
+    effects::{blast, jet_stream},
+    damage:: {DamageDeal, HealthMax}
+};
 
 pub struct MissilePlugin;
 impl Plugin for MissilePlugin {
@@ -15,13 +17,19 @@ impl Plugin for MissilePlugin {
         .add_systems(Startup, init)
         .add_systems(Update, check_lifetime.run_if(any_with_component::<LifeTime>))
         // .add_systems(Update, gizmos)
-        .add_observer(fire)
+        .add_observer(shot)
         .add_observer(on_destroy)
         ;
     }
 }
 
 // ---
+
+#[derive(Event, Debug)]
+pub struct Shot {
+    pub position: Vec3,
+    pub direction: Dir3
+}
 
 #[derive(Resource)]
 struct MissileSample(Entity);
@@ -30,7 +38,6 @@ struct MissileSample(Entity);
 struct EffectStuff{
     image: Handle<Image>,
     jet: Handle<EffectAsset>,
-    // blast: Handle<EffectAsset>
 }
 
 #[derive(Component)]
@@ -38,6 +45,10 @@ struct Missile;
 
 #[derive(Component)]
 struct Blast;
+
+#[derive(Component)]
+pub struct LifeTime(pub Timer);
+
 
 
 const VELOCITY_VALUE: f32 = 60.;
@@ -82,17 +93,13 @@ fn init(
     cmd.insert_resource(EffectStuff {
         image: image_h.clone(),
         jet: effects.add(jet_stream()),
-        // blast: effects.add(blast())
     });
-
-
-
 
 }
 
 // ---
 
-fn fire(
+fn shot(
     tr: On<Shot>,
     sample: Res<MissileSample>,
     e_stuff: Res<EffectStuff>, 

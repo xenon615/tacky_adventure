@@ -5,12 +5,12 @@ use bevy_hanabi::prelude::*;
 
 use crate:: {
     effects::lift_steam, help::SetHelpData, info::InfoCont,
-    shared::{MessagesAddLine, StageIndex, Player, get_platform, stage_index_changed},
-    monologue::{MonologueCont, MonoLines}
+    platform::get_platform,
+    monologue::{MonologueCont, MonoLines},
+    player::Player,
+    messages::MessagesAddLine,
+    stage::{StageIndex, stage_index_changed}
 };
-
-
-
 
 pub struct LiftPlugin;
 impl Plugin for LiftPlugin {
@@ -149,6 +149,7 @@ fn add_lines(
     mut mono_lines: ResMut<MonoLines>
 ) {
     mono_lines.0 =  vec![
-        "An lift is not bad, I will build less."
+        "An lift is not bad, I will build less.",
+        "Although this pink smoke is completely tastelessness"
     ];
 }

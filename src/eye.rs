@@ -8,7 +8,10 @@ use bevy::{
 
 use crate::{
     monologue::MonoLines,
-    shared::{StageIndex, Player, Shot, Target, TargetedBy, Threat, vec_rnd, stage_index_changed}
+    shared::{Target, TargetedBy, Threat, vec_rnd},
+    player::Player,
+    missile::Shot,
+    stage::{StageIndex, stage_index_changed}
 };
 
 // ---

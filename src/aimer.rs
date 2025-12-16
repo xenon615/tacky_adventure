@@ -2,9 +2,11 @@ use bevy::prelude::*;
 use crate:: {
     help::SetHelpData,
     info::InfoCont,
-    shared::{StageIndex,  MessagesAddLine, Player, Exit, stage_index_changed}, 
     ui::UiSlot,
-    monologue::MonoLines
+    monologue::MonoLines,
+    player::Player,
+    messages::MessagesAddLine,
+    stage::{StageStone, StageIndex, stage_index_changed}
 };
 
 pub struct AimerPlugin;
@@ -98,9 +100,9 @@ fn set_help(
 // ---
 
 fn update_aimer(
-    exit_q: Single<&Transform, (With<Exit>, Without<Player>, Without<ArrowYaw>)>,
-    player_q: Single<&Transform, (With<Player>, Without<Exit>, Without<ArrowYaw>)>,
-    arrow_yaw_q: Single<&mut UiTransform, (With<ArrowYaw>, Without<Player>, Without<Exit>)>,
+    exit_q: Single<&Transform, (With<StageStone>, Without<Player>, Without<ArrowYaw>)>,
+    player_q: Single<&Transform, (With<Player>, Without<StageStone>, Without<ArrowYaw>)>,
+    arrow_yaw_q: Single<&mut UiTransform, (With<ArrowYaw>, Without<Player>, Without<StageStone>)>,
     elevation_text: Single<&mut Text, With<Elevation>>,
     time: Res<Time>
 ) {
@@ -119,6 +121,7 @@ fn update_aimer(
     let elevation_update = match exit_t.translation.y - player_t.translation.y {
         x if x > 2. => Some("Higher"),
         x if x < -2. => Some("Lower"),
+        x if x.abs() < 2. => Some("Almost"),
         _ => None
     };
     if let Some(t) = elevation_update {
@@ -133,6 +136,7 @@ fn add_lines(
 ) {
     mono_lines.0 =  vec![
         "Now it's easier for me to understand where to go.",
-        "This is a really useful feature."
+        "This is a really useful feature.",
+        "but this yellow arrow doesn't stand up to any criticism"
     ];
 }

@@ -4,20 +4,26 @@ use bevy::{
    shader::ShaderRef
 };
 use avian3d::prelude::*;
-use crate::shared::{vec_rnd, Exit,  StageIndex, Player};
+use crate::{
+    shared::vec_rnd,
+    player::Player
+};
 
 pub struct StagePlugin;
 impl Plugin for StagePlugin {
     fn build(&self, app: &mut App) {
         app
+        .init_resource::<StageIndex>()
         .add_plugins(MaterialPlugin::<StageStoneMaterial>::default())
         .add_systems(Startup, start)
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
-        .add_systems(Update, move_exit.run_if(any_with_component::<MoveStageStone>))
+        .add_systems(Update, stage_index_changed_local.run_if(resource_changed::<StageIndex>))
+        .add_systems(Update, move_stone.run_if(any_with_component::<MoveStageStone>))
         ;  
     }
 }
 
+#[derive(Resource, Default)]
+pub struct StageIndex(pub usize);
 
 
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
@@ -47,6 +53,9 @@ pub struct StageStoneMaterialHandle(Handle<StageStoneMaterial>);
 #[derive(Component)]
 struct MoveStageStone(Vec3);
 
+#[derive(Component)]
+pub struct StageStone;
+
 // ---
 
 fn start(
@@ -57,7 +66,7 @@ fn start(
     let emh = materials.add(StageStoneMaterial {stage_index: 0});
     cmd.insert_resource(StageStoneMaterialHandle(emh.clone()));
     cmd.spawn((
-        Exit,
+        StageStone,
         Mesh3d(meshes.add(Cuboid::from_length(4.))),
         MeshMaterial3d(emh.clone()),
         Transform::from_translation(Vec3::new(0., 3., -100.)),
@@ -65,8 +74,6 @@ fn start(
         Collider::cuboid(4., 4., 4.),
         CollisionEventsEnabled,
         // Sensor,
-        Name::new("Exit")
-
     ))
     .observe(on_collide)
     ;
@@ -76,7 +83,7 @@ fn start(
 
 fn on_collide(
     tr: On<CollisionStart>,
-    tr_q: Single<&mut AngularVelocity, With<Exit>>,
+    tr_q: Single<&mut AngularVelocity, With<StageStone>>,
     mut stage_index: ResMut<StageIndex>,
     player_q: Query<&Player>,
     mut cmd: Commands
@@ -95,7 +102,7 @@ fn on_collide(
 
 // ---
 
-fn opt_index_changed(
+fn stage_index_changed_local(
     mh: Res<StageStoneMaterialHandle>,
     mut materials: ResMut<Assets<StageStoneMaterial>>,
     opt_index: Res<StageIndex>
@@ -111,9 +118,9 @@ fn opt_index_changed(
 
 // ---
 
-fn move_exit(
+fn move_stone(
     mut cmd : Commands,
-    tr_q: Single<(Entity, &mut Transform, &mut AngularVelocity, &MoveStageStone), With<Exit>>,  
+    tr_q: Single<(Entity, &mut Transform, &mut AngularVelocity, &MoveStageStone), With<StageStone>>,  
     time: Res<Time>
 ) {
     let (e, mut trans, mut av, me) =  tr_q.into_inner();
@@ -127,5 +134,12 @@ fn move_exit(
 
 }
 
-
+pub fn stage_index_changed<const STAGE_INDEX: usize, T: Resource + Default> (
+    stage_index: Res<StageIndex>,
+    mut cmd: Commands
+) {
+    if stage_index.0 == STAGE_INDEX {
+        cmd.init_resource::<T>();
+    }
+} 
 

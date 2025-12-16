@@ -6,7 +6,11 @@ use bevy::{
 use bevy_gltf_animator_helper::AniData;
 
 use crate::{
-    camera::Cam, messages::{HideTime, set_text}, shared::{MessagesAddLine, Player}, ui
+    camera::Cam, 
+    messages::{HideTime, set_text}, 
+    ui,
+    player::Player,
+    messages::MessagesAddLine
 };
     
 

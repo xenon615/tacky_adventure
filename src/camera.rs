@@ -15,7 +15,12 @@ use bevy::{
 use avian3d::prelude::PhysicsSystems;
 // use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 
-use crate::shared::{GameState, StageIndex, Player};
+use crate::{
+    shared::GameState,
+    stage::StageIndex,
+    player::Player
+};
+
 
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
@@ -167,18 +172,7 @@ fn stage_index_changed (
                 brightness: 500.,
                 ..default()
             },
-
             MotionBlur::default(),
-            // DistanceFog {
-            //     color: Color::srgb(0.25, 0.25, 0.25),
-            //     falloff: FogFalloff::Linear {
-            //         start: 50.0,
-            //         end: 200.0,
-            //     },
-            //     ..default()
-            // },
-        // Atmosphere::EARTH,
-
         ));
     }
 }

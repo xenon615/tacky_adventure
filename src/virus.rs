@@ -10,7 +10,11 @@ use std::{ops::{Add, Mul}, time::Duration};
 use crate::{
     effects::scattering, 
     monologue::MonologueCont, 
-    shared::{DamageDeal, GameState, HealthMax, MessagesAddLine, StageIndex, Player, Targetable, Threat, closest, fibonacci_sphere, vec_rnd, stage_index_changed}
+    shared::{GameState, Targetable, Threat, closest, fibonacci_sphere, vec_rnd},
+    messages::MessagesAddLine,
+    damage::{DamageDeal,HealthMax},
+    player::Player,
+    stage::{StageIndex, stage_index_changed}
 };
 
 // ---
@@ -43,7 +47,7 @@ pub struct VirusMaterial {
 
 impl Material for VirusMaterial {
     fn fragment_shader() -> ShaderRef {
-        "shaders/virus.wgsl".into()
+        "shaders/fbm1.wgsl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode {

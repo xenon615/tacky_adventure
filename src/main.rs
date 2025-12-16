@@ -14,7 +14,6 @@ use avian3d::{
 use crate::shared::{
     GameState,
     NotReady,
-    StageIndex
 };
 
 mod shared;
@@ -81,9 +80,7 @@ fn main() {
     // .add_plugins(EguiPlugin::default() )
     // .add_plugins(WorldInspectorPlugin::new())
     .init_state::<GameState>()
-    .init_resource::<StageIndex>()
     .add_systems(Update, check_ready.run_if(in_state(GameState::Loading)))
-    
     .run()
     ;
 }
