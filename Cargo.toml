@@ -15,8 +15,8 @@ codegen-units = 1
 
 [dependencies]
 bevy_egui = "0.38.0"
-bevy-inspector-egui = "0.35.0"
-bevy_panorbit_camera = "0.33"
+# bevy-inspector-egui = "0.35.0"
+# bevy_panorbit_camera = "0.33"
 bevy_gltf_animator_helper = {git = "https://github.com/xenon615/bevy_gltf_animator_helper.git", tag = "v0.3.0"}
 
 fastrand = "2.3.0"
@@ -91,7 +91,7 @@ features = [
 [dependencies.bevy_hanabi]
 version = "0.17.0"
 default-features = false 
-features = ["3d", "serde"] 
+features = ["3d"] 
  
 
 
