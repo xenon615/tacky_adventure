@@ -11,7 +11,7 @@ use crate::{
     monologue::MonologueCont,
     info::InfoCont, 
     platform, 
-    shared::{GameState, NotReady, Targetable},
+    shared::{GameState, NotReady},
     damage::{DamageInfo, DamageDeal, DamageDealed, HealthMax, Damage},
     messages::MessagesAddLine,
     ui::{self, UiSlot}
