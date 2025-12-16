@@ -39,7 +39,7 @@ impl Plugin for CameraPlugin {
             .run_if(in_state(GameState::Game))
         ) 
         .add_observer(cam_reset)   
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
+        .add_systems(Update, stage_index_changed.run_if(resource_changed::<StageIndex>))
         ; 
     }
 } 
@@ -72,8 +72,6 @@ fn setup (
         Cam,
         Camera::default(),
         // PanOrbitCamera::default(),
-        // NoIndirectDrawing
-        
     ));
 
     cmd.insert_resource(
@@ -152,7 +150,7 @@ fn cam_reset(
 
 // ---
 
-fn opt_index_changed (
+fn stage_index_changed (
     mut cmd: Commands,
     assets: ResMut<AssetServer> ,
     cam_q: Single<Entity, With<Cam>>,

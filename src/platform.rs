@@ -10,7 +10,7 @@ use avian3d::{math::Quaternion, prelude::*};
 use crate::{
     help::SetHelpData, 
     info::InfoCont, 
-    shared::{CastBuild, Exit, GameState, MessagesAddLine, StageIndex, PLATFORM_DIM, Player, get_platform},
+    shared::{CastBuild, Exit, GameState, MessagesAddLine, StageIndex, PLATFORM_DIM, Player, get_platform, stage_index_changed},
     monologue::MonoLines
 };
 
@@ -27,7 +27,7 @@ impl Plugin for PlatformPlugin {
                 .and(resource_changed::<ButtonInput<KeyCode>>)
             )
         )
-        .add_systems(Update, stage_index_changed.run_if(resource_changed::<StageIndex>))
+        .add_systems(Update, stage_index_changed::<1, EnabledBuild>.run_if(resource_changed::<StageIndex>))
         ;
     }
 }
@@ -64,7 +64,7 @@ pub struct Platform;
 #[derive(Resource)]
 pub struct PlatformMaterialHandle(Handle<PlatformMaterial>);
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 struct EnabledBuild;
 
 // ---
@@ -269,17 +269,3 @@ fn add_lines(
     ];
     // .iter().for_each(| l | mono_lines.0.push(l)); 
 }
-
-
-// --
-
-const OPTION_INDEX: usize = 1;
-
-fn stage_index_changed(
-    opt_index: Res<StageIndex>,
-    mut cmd: Commands
-) {
-    if opt_index.0 == OPTION_INDEX {
-        cmd.insert_resource(EnabledBuild);
-    }
-} 

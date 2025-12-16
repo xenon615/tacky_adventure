@@ -17,16 +17,10 @@ fn on_collision(
     tr: On<CollisionStart>,
     mut damageable_q: Query<(&mut Damage, &HealthMax, Option<&DamageCallback>)>,
     dd_q: Query<&DamageDeal>,
-    // name_q: Query<&Name>,
     mut cmd: Commands
 ) {
     let Some(other)  = tr.body2 else {return;};
     let Some(me) = tr.body1 else {return;};
-
-
-    // let def = Name::new("Unknown");
-    // let me_name = name_q.get(me).unwrap_or(&def);
-    // let other_name = name_q.get(other).unwrap_or(&def);
     
     let Ok((mut damage, health_max, c_o)) =  damageable_q.get_mut(other) else {
         return;
@@ -44,9 +38,6 @@ fn on_collision(
         } 
 
     }
-
-    // println!("{:?} collided with {:?} current damage {}" , me_name, other_name, damage.0);
-        
 }
 
 // --
@@ -61,6 +52,5 @@ fn clear_targets(
         if t.0 == e {
             cmd.entity(et).remove::<Target>();
         } 
-
     }
 }  

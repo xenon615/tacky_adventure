@@ -7,7 +7,11 @@ use bevy:: {
 use bevy_hanabi::{EffectAsset, EffectMaterial, EffectSpawner, ParticleEffect};
 use avian3d::prelude::*;
 use std::{ops::{Add, Mul}, time::Duration};
-use crate::{effects::scattering, monologue::MonologueCont, shared::{DamageDeal, GameState, HealthMax, MessagesAddLine, StageIndex, Player, Targetable, Threat, closest, fibonacci_sphere, vec_rnd}};
+use crate::{
+    effects::scattering, 
+    monologue::MonologueCont, 
+    shared::{DamageDeal, GameState, HealthMax, MessagesAddLine, StageIndex, Player, Targetable, Threat, closest, fibonacci_sphere, vec_rnd, stage_index_changed}
+};
 
 // ---
 
@@ -23,7 +27,7 @@ impl Plugin for VirusPlugin {
             .run_if(resource_exists::<EnabledVirus>)
         )
         .add_systems(OnEnter(GameState::Over), | mut cmd: Commands | cmd.remove_resource::<EnabledVirus>() )
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
+        .add_systems(Update, stage_index_changed::<5, EnabledVirus>.run_if(resource_changed::<StageIndex>))
         .add_observer(on_despawn)
         ;
     }
@@ -56,10 +60,7 @@ pub struct Virus;
 #[derive(Component)]
 pub struct VirusSample;
 
-// #[derive(Resource)]
-// pub struct VirusMaterialHandle(Handle<VirusMaterial>);
-
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct EnabledVirus;
 
 #[derive(Component)]
@@ -160,20 +161,6 @@ fn spawn_next(
     ))
     ;
 }
-
-// ---
-
-const OPTION_INDEX: usize = 7;
-// const OPTION_INDEX: usize = 1;
-
-fn opt_index_changed(
-    opt_index: Res<StageIndex>,
-    mut cmd: Commands
-) {
-    if opt_index.0 == OPTION_INDEX {
-        cmd.insert_resource(EnabledVirus);
-    }
-} 
 
 // ---
 

@@ -10,7 +10,11 @@ use bevy_tnua::prelude::*;
 use bevy_tnua_avian3d::{*, TnuaAvian3dPlugin};
 
 use crate::{
-    monologue::MonologueCont, platform, shared::{DamageCallback, DamageDeal, DamageDealed, GameState, HealthMax, NotReady, Targetable}, ui::{self, UiSlot}};
+    monologue::MonologueCont,
+    info::InfoCont, 
+    platform, 
+    shared::{DamageCallback, DamageDeal, DamageDealed, GameState, HealthMax, NotReady, Targetable},
+    ui::{self, UiSlot}};
 use bevy_gltf_animator_helper::{AllAnimations, AniData, AnimatorHelperPlugin};
 
 use crate::shared:: {CastBuild, Damage, Player, MessagesAddLine};
@@ -28,15 +32,19 @@ impl Plugin for PlayerPlugin {
             .after(ui::startup)
             .after(platform::startup)
         )
-        .add_systems(FixedUpdate, (
-            apply_controls,
-            movement,
-            animate
-        ).in_set(TnuaUserControlsSystems))
+        .add_systems(FixedUpdate, 
+            (
+                apply_controls,
+                movement,
+                animate
+            )
+            .in_set(TnuaUserControlsSystems)
+            .run_if(in_state(GameState::Game))
+        )
+        .add_systems(OnEnter(GameState::Game), enter_game)
         .add_systems(Update, timer.run_if(any_with_component::<NextAfter>))
-        .add_observer(build_action)
-        // .add_systems(OnEnter(GameState::Game), enter_game)
         .add_systems(Update, animation_changed)
+        .add_observer(build_action)
         ;
     }
 }
@@ -95,7 +103,6 @@ fn on_ready (
     mut cmd: Commands
 ) {
     cmd.entity(tr.entity).remove::<NotReady>();
-    
 }
 
 // ---
@@ -103,7 +110,7 @@ fn on_ready (
 fn enter_game(
     mut cmd: Commands
 ) {
-    cmd.trigger(MessagesAddLine::<MonologueCont>::new("Hi").with_time(5));
+    cmd.trigger(MessagesAddLine::<InfoCont>::new("Use arrows or WADS for move and turn, Mouse whell for camera distance").with_time(5));
 }
 
 // ---

@@ -4,7 +4,8 @@ use avian3d::prelude::*;
 use bevy_hanabi::prelude::*;
 
 use crate:: {
-    effects::lift_steam, help::SetHelpData, info::InfoCont, shared::{MessagesAddLine, StageIndex, Player, get_platform},
+    effects::lift_steam, help::SetHelpData, info::InfoCont,
+    shared::{MessagesAddLine, StageIndex, Player, get_platform, stage_index_changed},
     monologue::{MonologueCont, MonoLines}
 };
 
@@ -17,7 +18,7 @@ impl Plugin for LiftPlugin {
         app
         .add_systems(Update, move_lift.run_if(any_with_component::<Lift>))
         .add_systems(Update, (prepare_effect, set_help, add_lines).run_if(resource_added::<EnabledLift>))
-        .add_systems(Update, opt_index_changed)
+        .add_systems(Update, stage_index_changed::<3, EnabledLift>.run_if(resource_changed::<StageIndex>))
         .add_systems(Update, switch_lift
             .run_if(input_just_pressed(KeyCode::KeyL))
             .run_if(resource_exists::<EnabledLift>)
@@ -34,11 +35,12 @@ struct Lift;
 #[derive(Component)]
 struct LiftEffect;
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 struct EnabledLift;
 
 const FORCE_UP: f32 = 150.;
 const FORCE_DOWN: f32 = 25.;
+const FORCE_NEUTRAL: f32 = 100.;
 
 // ---
 
@@ -47,11 +49,11 @@ fn move_lift(
     keys: Res<ButtonInput<KeyCode>>
 ) {
     let mut ef = lift_q.into_inner();
-    if keys.just_pressed(KeyCode::NumpadAdd) {
+    if keys.just_pressed(KeyCode::PageUp) {
         ef.0 = Vec3::Y * FORCE_UP;
     }
 
-    if keys.just_pressed(KeyCode::NumpadSubtract) {
+    if keys.just_pressed(KeyCode::PageDown) {
         ef.0  = Vec3::Y * FORCE_DOWN;
     }
 }
@@ -113,8 +115,8 @@ fn switch_lift(
             RigidBody::Dynamic,
             LockedAxes::ALL_LOCKED.unlock_translation_y(),
             Friction::new(0.0).with_combine_rule(CoefficientCombine::Min),
-            LinearDamping(2.),
-            ConstantForce(Vec3::Y * FORCE_UP),
+            LinearDamping(4.),
+            ConstantForce(Vec3::Y * FORCE_NEUTRAL),
             Lift 
         )).add_child(ee);
 
@@ -135,7 +137,7 @@ fn set_help(
 ) {
     cmd.trigger(SetHelpData{
         title: "Lift", 
-        keys: "L (On / Off), Num + (Up), Num - (Down)",
+        keys: "L (On / Off), Page(Up), Page(Down)",
         hint: "use the lift to go up or down"
     });
     cmd.trigger(MessagesAddLine::<InfoCont>::new("Lift is available, check out the help"));
@@ -150,15 +152,3 @@ fn add_lines(
         "An lift is not bad, I will build less."
     ];
 }
-
-
-const OPTION_INDEX: usize = 3;
-
-fn opt_index_changed(
-    opt_index: Res<StageIndex>,
-    mut cmd: Commands
-) {
-    if opt_index.0 == OPTION_INDEX {
-        cmd.insert_resource(EnabledLift);
-    }
-} 

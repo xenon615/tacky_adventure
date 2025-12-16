@@ -146,3 +146,14 @@ pub fn vec_rnd(rx: Range<i32>, ry: Range<i32>, rz: Range<i32>) -> Vec3{
 }
 
 // ---
+
+
+
+pub fn stage_index_changed<const STAGE_INDEX: usize, T: Resource + Default> (
+    stage_index: Res<StageIndex>,
+    mut cmd: Commands
+) {
+    if stage_index.0 == STAGE_INDEX {
+        cmd.init_resource::<T>();
+    }
+} 

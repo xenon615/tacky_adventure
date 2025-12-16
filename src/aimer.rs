@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use crate:: {
     help::SetHelpData,
     info::InfoCont,
-    shared::{StageIndex,  MessagesAddLine, Player, Exit}, 
+    shared::{StageIndex,  MessagesAddLine, Player, Exit, stage_index_changed}, 
     ui::UiSlot,
     monologue::MonoLines
 };
@@ -13,7 +13,7 @@ impl Plugin for AimerPlugin {
         app
         .add_systems(Startup, startup)
         .add_systems(Update, (init_ui, set_help, add_lines).run_if(resource_added::<EnabledAimer>))
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
+        .add_systems(Update, stage_index_changed::<2, EnabledAimer>.run_if(resource_changed::<StageIndex>))
         .add_systems(Update, update_aimer.run_if(resource_exists::<EnabledAimer>))
         ;
         
@@ -32,7 +32,7 @@ pub struct ArrowYaw;
 pub struct Elevation;
 
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct EnabledAimer;
 
 
@@ -125,19 +125,6 @@ fn update_aimer(
        elevation_text.into_inner().0 = t.into(); 
     }
 }
-
-// --
-
-const OPTION_INDEX: usize = 2;
-
-fn opt_index_changed(
-    opt_index: Res<StageIndex>,
-    mut cmd: Commands
-) {
-    if opt_index.0 == OPTION_INDEX {
-        cmd.insert_resource(EnabledAimer);
-    }
-} 
 
 // ---
 

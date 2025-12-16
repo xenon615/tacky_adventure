@@ -8,7 +8,7 @@ use bevy::{
 
 use crate::{
     monologue::MonoLines,
-    shared::{StageIndex, Player, Shot, Target, TargetedBy, Threat, vec_rnd}
+    shared::{StageIndex, Player, Shot, Target, TargetedBy, Threat, vec_rnd, stage_index_changed}
 };
 
 // ---
@@ -19,7 +19,6 @@ impl Plugin for EyesPlugin {
         app
         .add_plugins(MaterialPlugin::<EyeMaterial>::default())
         .add_systems(Update, (
-            // gizmos,
             change_mode, 
             change_color,
             moving, 
@@ -28,7 +27,7 @@ impl Plugin for EyesPlugin {
             aiming.run_if(any_with_component::<Target>)
         ).run_if(resource_exists::<EnabledEyes>)) 
         .add_systems(Update, check_blink.run_if(any_with_component::<Blinking>))
-        .add_systems(Update, opt_index_changed.run_if(resource_changed::<StageIndex>))
+        .add_systems(Update, stage_index_changed::<4, EnabledEyes>.run_if(resource_changed::<StageIndex>))
         .add_systems(Update, (startup, add_lines).run_if(resource_added::<EnabledEyes>))
 
         ;
@@ -78,7 +77,7 @@ pub enum EyeMode {
 const EYES_COUNT: i8 = 9; 
 const ESCORT_RELATIVE: Vec3 = Vec3::new(0., 5., 20.);
 const ESCORT_SQUARE_TRESHOLD: f32 = 9.;
-const BASE_VELOCITY: f32 = 5.;
+const BASE_VELOCITY: f32 = 1.;
 const ANGLE_STEP: f32 = 360. / (EYES_COUNT as f32);
 const DETECT_RANGE_SQUARED: f32  = 100.0 * 100.0;
 const AMMO_LOAD_TIME: f32 = 2.;
@@ -90,7 +89,7 @@ pub struct Spot;
 #[derive(Component)]
 pub struct Blinking(Timer);
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct EnabledEyes;
 
 
@@ -267,17 +266,11 @@ fn aiming(
     threat_q: Query<&Transform, With<Threat>>,
     time: Res<Time>,
     mut cmd: Commands,
-    // mut giz: Gizmos
 ) {
     for  (e, target_e, mut t, opsh) in &mut eye_q {
         let Ok(target_t) = threat_q.get(target_e.0) else {
             continue;
         };
-        // giz.ray(t.translation, t.forward() * 100., css::BLUE_VIOLET);
-        // giz.axes(*target_t, 10.);
-        // info!("{:?}", target_t.translation);
-        // giz.ray(t.translation, target_t.translation - t.translation, css::BLUE_VIOLET);
-
 
         t.rotation = t.rotation.slerp(t.looking_at(target_t.translation, Vec3::Y).rotation, time.delta_secs() * 5.);
         let to_target = (target_t.translation - t.translation).normalize();
@@ -380,16 +373,3 @@ fn add_lines(
         "Let them walk with me"
     ];
 }
-
-// ---
-
-const OPTION_INDEX: usize = 4;
-
-fn opt_index_changed(
-    opt_index: Res<StageIndex>,
-    mut cmd: Commands
-) {
-    if opt_index.0 == OPTION_INDEX {
-        cmd.insert_resource(EnabledEyes);
-    }
-} 

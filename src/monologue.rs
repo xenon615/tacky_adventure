@@ -1,7 +1,7 @@
 
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 use bevy::{
-    color::palettes::css, prelude::*, time::common_conditions::on_timer
+    prelude::*, time::common_conditions::on_timer
 };
 use bevy_gltf_animator_helper::AniData;
 
@@ -83,38 +83,7 @@ fn follow(
     }
 }
 
-// --
-
-// fn opt_index_changed(
-//     opt_index: Res<StageIndex>,
-//     mut mono_index: ResMut<MonoIndex>
-// ) {
-//     mono_index.0 = Some(opt_index.0);
-// }
-
 // ---
-
-// fn read_mono_lines(
-//     mut cmd: Commands,
-//     mut mono_lines: ResMut<MonoLines>,
-//     mut mono_index: ResMut<MonoIndex>
-// ) {
-
-//     let Some(mi) = mono_index.0 else {
-//         return;
-//     };
-
-//     if let Some(section) = mono_lines.0.get_mut(mi)  {
-//         if !section.is_empty() {
-//             let s = section.remove(0);
-//             cmd.trigger(MessagesAddLine::<MonologueCont>::new(s).with_time(4));            
-//         } else {
-//             mono_index.0 = None;    
-//         }
-//     } else {
-//         mono_index.0 = None;
-//     }
-// }
 
 fn send_line(
     mut cmd: Commands,
@@ -129,7 +98,7 @@ fn send_line(
     };
 }
 
-
+// ---
 
 fn lines_added(
     mut mono_active: ResMut<MonoActive>,

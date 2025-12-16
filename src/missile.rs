@@ -42,6 +42,7 @@ struct Blast;
 
 const VELOCITY_VALUE: f32 = 60.;
 const LIFETIME_VALUE: f32 = 5.;
+const DAMAGE_VALUE: f32 = 0.25;
 
 // ---
 
@@ -109,7 +110,7 @@ fn fire(
         LinearVelocity(shot.direction * VELOCITY_VALUE),
         LifeTime(Timer::from_seconds(LIFETIME_VALUE, TimerMode::Once)),
         HealthMax(1.),
-        DamageDeal(0.1),
+        DamageDeal(DAMAGE_VALUE),
         children![
             (
                 ParticleEffect::new(e_stuff.jet.clone()),
@@ -155,8 +156,6 @@ fn on_destroy(
     let (mut t, mut es) = blast_q.into_inner();
     t.translation = trans.translation;
     es.reset();
-
-
     // println!("destroyed {:?}", trans.translation);
 }
 
@@ -175,59 +174,3 @@ fn gizmos(
     }
 }
 
-
-// ---
-
-// #[allow(dead_code)]
-// fn init_demo(
-//     mut meshes: ResMut<Assets<Mesh>>,
-//     mut materials: ResMut<Assets<StandardMaterial>>,
-//     mut effects: ResMut<Assets<EffectAsset>>,
-//     assets: ResMut<AssetServer>,
-//     mut cmd: Commands
-// ) {
-    
-//     cmd.spawn((
-//         Mesh3d(meshes.add(Sphere::new(0.2))),
-//         MeshMaterial3d(materials.add(Color::WHITE)),
-//         Transform::from_xyz(1., 1., 1.),
-//         Sensor,
-//         Collider::sphere(0.2),
-//         CollisionEventsEnabled,
-//         RigidBody::Kinematic,
-//         Missile,
-//         HealthMax(1.),
-//         DamageDeal(0.1),
-//         children![
-//             (
-//                 Name::new("jet2"),
-//                 ParticleEffect::new(effects.add(jet_stream())),
-//                 Transform::IDENTITY
-//                 .with_rotation(Quat::from_rotation_x(90.0_f32.to_radians()))
-//                 ,
-//                 EffectMaterial{
-//                     images: vec![
-//                         assets.load("textures/cloud.png")
-//                     ]
-//                 },
-//             ),
-
-//             (
-//                 ParticleEffect::new(e_stuff.blast.clone()),
-//                 EffectMaterial{
-//                     images: vec![
-//                         e_stuff.image.clone()
-//                     ]
-//                 },
-//                 Blast
-//             )
-
-
-
-//         ]
-//     ))
-
-    
-//     ;
-
-// }

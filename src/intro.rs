@@ -1,4 +1,4 @@
-use bevy::{color::palettes, prelude::*};
+use bevy::prelude::*;
 
 use crate::{
     camera::Cam, 
@@ -33,7 +33,7 @@ fn add_lines(
         "What a strange place?",
         "I wonder how I ended up here.",
         "Probably again the fault of this idiot who thinks he is able to create realities.",
-        "what the fuck is his name?",
+        "what was his name?",
         "God, demiurge, Sir Max?",
         "Never mind, let's take a look around",
         "A path leading to a strange, shimmering thing and overgrown flying dumplings.",
@@ -41,7 +41,6 @@ fn add_lines(
         "Complete bad taste, in short.",
         "I guess I should go to that shimmering thing .."
     ];
-    // ].iter().for_each(| l | mono_lines.0.push(l)); 
 }
 
 // ---
@@ -59,7 +58,7 @@ fn camera_moving (
 
 
     cam_t.rotation = cam_t.rotation.slerp(
-       cam_t.looking_at(player_t.translation, Vec3::Y).rotation,
+       cam_t.looking_at(player_t.translation.with_y(5.), Vec3::Y).rotation,
        time.delta_secs() * 10.
     );
 
@@ -71,11 +70,11 @@ fn camera_moving (
         return;
     }
 
-    cam_t.translation =  player_t.translation + Quat::from_rotation_y(time.elapsed_secs()).mul_vec3(radius * Vec3::Z).with_y(y)
+    cam_t.translation =  player_t.translation + Quat::from_rotation_y(time.elapsed_secs() * 0.5).mul_vec3(radius * Vec3::Z).with_y(y)
     ;
 
     *minus_radius += 2. * time.delta_secs();
-    *minus_y += 12. * time.delta_secs();
+    *minus_y += 20. * time.delta_secs();
 
 
 }

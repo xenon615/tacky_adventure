@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::shared::StageIndex;
+use crate::{platform, shared::StageIndex};
 pub struct FeaturePlugin;
 impl Plugin for FeaturePlugin {
     fn build(&self, app: &mut App) {
@@ -11,6 +11,11 @@ impl Plugin for FeaturePlugin {
 
 // ---
 
-fn stage_index_changed() {
+// fn stage_index_changed(
+//     stage_index: Res<StageIndex>
+// ) {
+//     match stage_index {
+//         1 => platform::
+//     }
 
-}
+// }
