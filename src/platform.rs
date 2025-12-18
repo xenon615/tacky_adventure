@@ -96,7 +96,7 @@ pub fn startup(
     ))
     .id()
     ;
-    cmd.run_system_cached_with(clone_platform, (id, Dir3::NEG_Z, BuildAction::Forward, 10));
+    cmd.run_system_cached_with(clone_platform, (id, Dir3::NEG_Z, BuildAction::Forward, 5));
 }
 
 // ---
@@ -269,5 +269,4 @@ fn add_lines(
         "Probably need to get to that flickering thing again that looks like crazy plasma",
         "You can't just approach this thing, but something tells me it can be fixed.",
     ];
-    // .iter().for_each(| l | mono_lines.0.push(l)); 
 }

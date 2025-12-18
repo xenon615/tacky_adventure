@@ -3,24 +3,22 @@ use std::time::Duration;
 use bevy::{
     prelude::*, time::common_conditions::on_timer
 };
-use bevy_gltf_animator_helper::AniData;
 
 use crate::{
     camera::Cam, 
-    messages::{HideTime, set_text}, 
+    messages::set_text, 
     ui,
     player::Player,
     messages::MessagesAddLine
 };
     
-
 pub struct MonologuePlugin;
 impl Plugin for MonologuePlugin {
     fn build(&self, app: &mut App) {
         app
         .init_resource::<MonoLines>()
         .add_systems(Startup, startup.after(ui::startup))
-        .add_systems(Update, follow.run_if(any_with_component::<HideTime>))
+        // .add_systems(Update, follow.run_if(any_with_component::<HideTime>))
         .add_systems(Update, send_line.run_if( resource_exists_and_equals(MonoActive(true)).and( on_timer(Duration::from_secs(5)).or(run_once))))
         .add_systems(Update, lines_added.run_if(resource_exists_and_changed::<MonoLines>.and(resource_exists::<MonoActive>)))
         .add_observer(set_text::<MonologueCont>)
@@ -51,6 +49,7 @@ fn startup(
         MonologueCont,
         Node {
             position_type: PositionType::Absolute,
+            bottom: Val::Px(45.0),
             width: Val::Percent(90.),
             flex_direction: FlexDirection::Column,
             border: UiRect::all(Val::Px(2.)),
@@ -60,9 +59,7 @@ fn startup(
             ..default()
         },
         Visibility::Hidden,
-        // BackgroundColor(css::BLACK.with_alpha(0.9).into()),
         BorderRadius::all(Val::Px(15.)),
-        // BorderColor::all(css::WHITE),
     ));
 
 }
@@ -71,14 +68,14 @@ fn startup(
 
 #[allow(dead_code)]
 fn follow(
-    player_q: Single<(&Transform, &AniData), With<Player>>,   
+    player_q: Single<&Transform, With<Player>>,   
     ballon_q: Single<(&mut Node, &ComputedNode), With<MonologueCont>>,
     camera_query: Single<(&Camera, &GlobalTransform), With<Cam>>,
 ) {
     let (camera, camera_transform) = camera_query.into_inner();
-    let (player_t, ad) = player_q.into_inner();
+    let player_t = player_q.into_inner();
 
-    let point = player_t.translation + Vec3::Y * if ad.animation_index != 7 {2.5} else {1.8};
+    let point = player_t.translation + 0.5 * Vec3::NEG_Y;
 
     if let Ok(coords) = camera.world_to_viewport(camera_transform, point) {
         let (mut  b_node, b_cnode) = ballon_q.into_inner();
@@ -95,7 +92,7 @@ fn send_line(
     mut mono_active: ResMut<MonoActive>,
 ) {
     if let Some(line) = mono_lines.0.get(0) {
-        cmd.trigger(MessagesAddLine::<MonologueCont>::new(line).with_time(4));
+        cmd.trigger(MessagesAddLine::<MonologueCont>::new(line).with_time(5));
         mono_lines.0.remove(0);
     } else {
         mono_active.0 = false;

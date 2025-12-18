@@ -218,7 +218,7 @@ fn build_action(
     let mut ad = ad_q.into_inner();
     ad.animation_index = 4;
     if !*done {
-        cmd.trigger(MessagesAddLine::<MonologueCont>::new("Wow!! Look Mom, I'm a builder.").with_time(5));
+        cmd.trigger(MessagesAddLine::<MonologueCont>::new("Wow!! Look Mom, I'm a builder.").with_time(5).with_font_size(24.).with_color(Color::WHITE));
         *done = true;
     }
 }

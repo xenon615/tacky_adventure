@@ -34,13 +34,13 @@ fn add_lines(
         "What a strange place?",
         "I wonder how I ended up here.",
         "Probably again the fault of this idiot who thinks he is able to create realities.",
-        "what was his name?",
+        "What was his name?",
         "God, demiurge, Sir Max?",
         "Never mind, let's take a look around",
         "A path leading to a strange, shimmering thing and overgrown flying dumplings.",
         "Everything is pale, I'm the only one here, blue as an drunkard's nose on a winter morning.",
         "Complete bad taste, in short.",
-        "I guess I should go to that shimmering thing .."
+        "I guess I should go ahead .."
     ];
 }
 
@@ -75,7 +75,7 @@ fn camera_moving (
     ;
 
     *minus_radius += 2. * time.delta_secs();
-    *minus_y += 20. * time.delta_secs();
+    *minus_y += 2. * time.delta_secs();
 
 
 }

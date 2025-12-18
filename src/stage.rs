@@ -69,7 +69,7 @@ fn start(
         StageStone,
         Mesh3d(meshes.add(Cuboid::from_length(4.))),
         MeshMaterial3d(emh.clone()),
-        Transform::from_translation(Vec3::new(0., 3., -100.)),
+        Transform::from_translation(Vec3::new(0., 3., -50.)),
         RigidBody::Kinematic,
         Collider::cuboid(4., 4., 4.),
         CollisionEventsEnabled,

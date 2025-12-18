@@ -1,5 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowMode};
 use bevy_hanabi::prelude::*;
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 // use bevy_egui::EguiPlugin;
@@ -19,7 +19,6 @@ use crate::shared::{
 mod shared;
 mod camera;
 mod env;
-// mod city;
 mod ui;
 mod player;
 mod platform;
@@ -38,13 +37,24 @@ mod messages;
 mod info;
 mod intro;
 // mod feature;
+mod end;
 
 fn main() {
     let mut app = App::new();
     app
     .insert_resource(ClearColor(Color::BLACK))
     .add_plugins((
-        DefaultPlugins,
+        DefaultPlugins.set(
+            WindowPlugin {
+                primary_window : Some(Window {
+                    mode: WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
+                    ..default()
+                }),
+                ..default()
+            }
+
+
+    ),
         PhysicsPlugins::default(),
         HanabiPlugin,
     ))
@@ -74,6 +84,7 @@ fn main() {
         messages::MessagesPlugin,
         info::InfoPlugin,        
         // feature::FeaturePlugin
+        end::EndPlugin
 
     ))
     // .add_plugins(PhysicsDebugPlugin::default())

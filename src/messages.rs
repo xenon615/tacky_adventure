@@ -21,26 +21,43 @@ impl Plugin for MessagesPlugin {
 // ---
 
 #[derive(Event)]
-pub struct MessagesAddLine<T>{pub text: &'static str, pub time: u64, _marker: PhantomData<T>}
+pub struct MessagesAddLine<T>{
+    pub text: &'static str, 
+    time: u64,
+    font_size: f32,
+    color: Option<Color>,
+     _marker: PhantomData<T>
+}
 
 impl <T>MessagesAddLine<T>  {
     pub fn new(text: &'static str) -> Self {
-        Self { text , time: 10, _marker: PhantomData::<T>}
+        Self { text , time: 10, font_size: 22.0, color: None, _marker: PhantomData::<T>}
     }
-
+     #[allow(dead_code)]
     pub fn with_time(mut self, time: u64) -> Self {
         self.time = time;
         self
     }
+
+    #[allow(dead_code)]
+    pub fn with_font_size(mut self, font_size: f32) -> Self {
+        self.font_size = font_size;
+        self
+    }    
+    #[allow(dead_code)]
+    pub fn with_color(mut self, color: Color) -> Self {
+        self.color = Some(color);
+        self
+    }    
 }
 
 
 #[derive(Component)]
-pub struct MessageLine;
+struct MessageLine;
 
 
 #[derive(Component)]
-pub struct HideTime(Timer);
+struct HideTime(Timer);
 
 // ---
 
@@ -63,8 +80,17 @@ pub fn set_text<T: Component>(
             // BackgroundColor(Color::BLACK.with_alpha(0.5)),
             MessageLine,
             children![(
-                TextColor(if *count % 2 == 0 {Color::linear_rgb(0.4, 1.1, 0.0)} else {Color::linear_rgb(1.1, 1.1, 0.1)}),
+                TextColor(
+                    if let Some(color) = tr.event().color {
+                        color
+                    } else {
+                        if *count % 2 == 0 {Color::linear_rgb(0.4, 1.1, 0.0)} else {Color::linear_rgb(1.1, 1.1, 0.1)}
+                    } 
+                ),
                 Text::new(tr.event().text),
+                TextFont{font_size: tr.event().font_size,
+                     ..default()
+                }
             )]
         )    
     ).id()

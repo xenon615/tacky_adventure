@@ -69,6 +69,7 @@ pub struct CamFollowParams {
 
 fn setup (
     mut cmd: Commands,
+    assets: ResMut<AssetServer>
     
 ) {
     cmd.spawn((
@@ -76,6 +77,12 @@ fn setup (
         Transform::from_xyz(100., 0., 0.).looking_at(Vec3::ZERO, Vec3::Y),
         Cam,
         Camera::default(),
+        Skybox {
+            image: assets.load("skyboxes/space-bw.ktx2"),
+            brightness: 500.,
+            ..default()
+        },
+
         // PanOrbitCamera::default(),
     ));
 

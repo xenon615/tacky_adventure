@@ -26,15 +26,15 @@ impl Plugin for AsteroidPlugin {
 // ---
 
 #[derive(Component)]
-pub struct Asteroid;
+struct Asteroid;
 
 #[derive(Component)]
-pub struct Orbit(f32, f32, f32);
+struct Orbit(f32, f32, f32);
 
 #[derive(Resource)]
-pub struct AsteroidMaterial(Handle<StandardMaterial>, Handle<Image>);
+struct AsteroidMaterial(Handle<StandardMaterial>, Handle<Image>);
 
-
+const ASTEROIDS_COUNT: usize = 24;
 
 // ---
 
@@ -66,7 +66,7 @@ fn startup(
     );
 
     cmd.insert_resource(AsteroidMaterial(mat.clone(), assets.load("textures/lava.png")));
-    for f in fibonacci_sphere(8) {
+    for f in fibonacci_sphere(ASTEROIDS_COUNT) {
         cmd.spawn((
             Transform::from_translation(f * 200.),
             Mesh3d(meshes.add(mesh.clone())),
