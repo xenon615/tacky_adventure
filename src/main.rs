@@ -43,16 +43,16 @@ fn main() {
     app
     .insert_resource(ClearColor(Color::BLACK))
     .add_plugins((
-        DefaultPlugins.set(
-            WindowPlugin {
-                primary_window : Some(Window {
-                    mode: WindowMode::Fullscreen(MonitorSelection::Primary, VideoModeSelection::Current),
-                    ..default()
-                }),
-                ..default()
-            }
-        ),
-        // DefaultPlugins,
+        // DefaultPlugins.set(
+        //     WindowPlugin {
+        //         primary_window : Some(Window {
+        //             mode: WindowMode::Fullscreen(MonitorSelection::Primary, VideoModeSelection::Current),
+        //             ..default()
+        //         }),
+        //         ..default()
+        //     }
+        // ),
+        DefaultPlugins,
         PhysicsPlugins::default(),
         HanabiPlugin,
     ))
