@@ -8,8 +8,6 @@ I just wanted to try out different things I could do with Bevy.
 ![image1](img/image1.png)
 ![image2](img/image2.png)
 
-
-
 ... to be continued
 
 
