@@ -1,8 +1,7 @@
 use std::time::Duration;
 use avian3d::prelude::*;
 use bevy::{
-    prelude::*, 
-    scene::SceneInstanceReady
+    prelude::*, scene::SceneInstanceReady
 };
 use bevy_tnua::prelude::*;
 use bevy_tnua_avian3d::{*, TnuaAvian3dPlugin};
@@ -44,7 +43,7 @@ impl Plugin for PlayerPlugin {
         .add_systems(Update, timer.run_if(any_with_component::<NextAfter>))
         .add_systems(Update, animation_changed)
         .add_observer(build_action)
-        ;
+        ;        
     }
 }
 
@@ -109,6 +108,7 @@ fn on_ready (
 ) {
     cmd.entity(tr.entity).remove::<NotReady>();
 }
+
 
 // ---
 #[allow(dead_code)]
@@ -218,7 +218,7 @@ fn build_action(
     let mut ad = ad_q.into_inner();
     ad.animation_index = 4;
     if !*done {
-        cmd.trigger(MessagesAddLine::<MonologueCont>::new("Wow!! Look Mom, I'm a builder.").with_time(5).with_font_size(24.).with_color(Color::WHITE));
+        cmd.trigger(MessagesAddLine::<MonologueCont>::new("Wow!! Look Mom, I'm a builder.").with_time(5).with_font_size(42.).with_color(Color::WHITE));
         *done = true;
     }
 }

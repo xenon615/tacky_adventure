@@ -88,13 +88,12 @@ fn setup (
 
     cmd.insert_resource(
         CamFollowParams{
-            tranlation_bias: Vec3::new(0., 3., 15.),
+            tranlation_bias: Vec3::new(0., 13., 30.),
             look_bias: Vec3::new(0., 4.5, 0.),
             translation_speed: 3.,
             rotation_speed: 8.
         }
     );
-
 }
 
 // ---

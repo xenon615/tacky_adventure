@@ -1,5 +1,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use bevy::{prelude::*, window::WindowMode};
+use bevy::{prelude::*,  window::WindowMode};
 use bevy_hanabi::prelude::*;
 // use bevy_inspector_egui::quick::WorldInspectorPlugin;
 // use bevy_egui::EguiPlugin;
@@ -36,7 +36,6 @@ mod asteroid;
 mod messages;
 mod info;
 mod intro;
-// mod feature;
 mod end;
 
 fn main() {
@@ -47,14 +46,13 @@ fn main() {
         DefaultPlugins.set(
             WindowPlugin {
                 primary_window : Some(Window {
-                    mode: WindowMode::BorderlessFullscreen(MonitorSelection::Primary),
+                    mode: WindowMode::Fullscreen(MonitorSelection::Primary, VideoModeSelection::Current),
                     ..default()
                 }),
                 ..default()
             }
-
-
-    ),
+        ),
+        // DefaultPlugins,
         PhysicsPlugins::default(),
         HanabiPlugin,
     ))
@@ -75,15 +73,12 @@ fn main() {
         virus::VirusPlugin,
         missile::MissilePlugin,
         damage::DamagePlugin,
-
-
     ))
     .add_plugins((
         intro::IntroPlugin,
         asteroid::AsteroidPlugin,
         messages::MessagesPlugin,
         info::InfoPlugin,        
-        // feature::FeaturePlugin
         end::EndPlugin
 
     ))

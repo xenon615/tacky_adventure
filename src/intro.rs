@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-
 use crate::{
     camera::Cam, 
     shared::GameState,
@@ -20,7 +19,6 @@ impl Plugin for IntroPlugin {
 
 fn startup(
     cam_q: Single<&mut Transform, With<Cam>>,
-    
 ) {
     *cam_q.into_inner() = Transform::from_xyz(0., 200., 0.).looking_at(Vec3::ZERO, Vec3::Y);
 }
@@ -33,9 +31,8 @@ fn add_lines(
     mono_lines.0 = vec![
         "What a strange place?",
         "I wonder how I ended up here.",
-        "Probably again the fault of this idiot who thinks he is able to create realities.",
-        "What was his name?",
-        "God, demiurge, Sir Max?",
+        "Damn xenon615, who put me here",
+        "He always has some kind of nonsense in his head, but this time he outdid himself.",
         "Never mind, let's take a look around",
         "A path leading to a strange, shimmering thing and overgrown flying dumplings.",
         "Everything is pale, I'm the only one here, blue as an drunkard's nose on a winter morning.",

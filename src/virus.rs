@@ -125,7 +125,7 @@ fn startup(
     ));
 
     cmd.insert_resource(EnabledVirus);
-    cmd.trigger(MessagesAddLine::<MonologueCont>::new("Virus?!!!!"));
+    cmd.trigger(MessagesAddLine::<MonologueCont>::new("Virus attack?. Help Me !"));
 } 
 
 // ---

@@ -29,9 +29,10 @@ fn startup(
     cmd.spawn((
         InfoCont,
         Node {
-            position_type: PositionType::Absolute,
+            // position_type: PositionType::Absolute,
             top: Val::Percent(25.),
-            left: Val::Percent(25.),
+            width: Val::Percent(100.),
+            // left: Val::Percent(25.),
             flex_direction: FlexDirection::Column,
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,

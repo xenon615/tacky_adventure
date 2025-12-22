@@ -177,7 +177,8 @@ fn clone_platform(
     In((platform_e, face_to, build_action, count)): In<(Entity, Dir3, BuildAction, usize)>,
     mut cmd: Commands,
     spatial: SpatialQuery,
-    trans_q: Query<&Transform, Without<Player>>
+    // trans_q: Query<&Transform, Without<Player>>
+    trans_q: Query<&Transform, With<Platform>>
  ) {
     let Ok(platform_t) = trans_q.get(platform_e) else {
         warn!("No platform");
@@ -207,7 +208,7 @@ fn clone_platform(
 
     if build_action != BuildAction::Delete{
         if intersect.len() != 0 {
-            warn!("No intersect");
+            warn!("can`t build in this direction");
             return;
         }
         let pos = connect_point + rotation.mul_vec3(-Vec3::Z *  PLATFORM_DIM.z * (0.5 + GAP));
