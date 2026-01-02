@@ -10,6 +10,10 @@ I just wanted to try out different things I could do with Bevy.
 ## Video
 [![video](https://img.youtube.com/vi/qswJfFFVz2Y/0.jpg)](https://youtu.be/qswJfFFVz2Y)  
 
+<p align="center" width="100%">
+<video src="https://youtu.be/qswJfFFVz2Y" width="80%" controls></video>
+</p>
+
 I wholeheartedly bless anyone who finds something interesting in my code to use it for personal purposes.
 
 
