@@ -8,7 +8,7 @@ I just wanted to try out different things I could do with Bevy.
 ![image1](img/image1.png)
 ![image2](img/image2.png)
 
-![video](https://youtu.be/qswJfFFVz2Y)
+![video](https://youtu.be/qswJfFFVz2Y/)
 
 
 I wholeheartedly bless anyone who finds something interesting in my code to use it for personal purposes.
