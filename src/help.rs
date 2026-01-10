@@ -18,6 +18,7 @@ impl Plugin for HelpPlugin {
 
 // ---
 
+
 #[derive(Event)]
 pub struct SetHelpData {
     pub title: &'static str,
